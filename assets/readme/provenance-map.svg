@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">开源来源关系图</title>
+  <desc id="desc">三列分别解释真实 Fork、外部运行时集成和只作架构参考的项目，避免把依赖或灵感来源误标成 Fork。</desc>
+  <rect width="1200" height="600" rx="8" fill="#0B0F17"/>
+  <text x="42" y="54" fill="#F8FAFC" font-size="36" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">Fork、集成与参考，关系各不相同</text>
+  <text x="42" y="88" fill="#94A3B8" font-size="24" font-weight="500" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">TRACEABLE ORIGIN · PINNED VERSIONS · HONEST ATTRIBUTION</text>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
+    <rect x="40" y="126" width="350" height="420" rx="7" fill="#111827" stroke="#F43F5E" stroke-width="2"/>
+    <rect x="64" y="150" width="174" height="42" rx="4" fill="#F43F5E"/>
+    <text x="151" y="178" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="700">forked_from</text>
+    <text x="64" y="232" fill="#F8FAFC" font-size="28" font-weight="700">真实 GitHub Fork</text>
+    <text x="64" y="266" fill="#94A3B8" font-size="20">保留上游历史与许可证</text>
+    <rect x="64" y="300" width="302" height="58" rx="5" fill="#181826"/><text x="84" y="337" fill="#F8FAFC" font-size="24">mcp-server-12306</text>
+    <rect x="64" y="374" width="302" height="58" rx="5" fill="#181826"/><text x="84" y="411" fill="#F8FAFC" font-size="24">amap-lbs-skill</text>
+    <rect x="64" y="448" width="302" height="58" rx="5" fill="#181826"/><text x="84" y="485" fill="#F8FAFC" font-size="24">flyai-skill · ego-lite</text>
+
+    <rect x="425" y="126" width="350" height="420" rx="7" fill="#111827" stroke="#38BDF8" stroke-width="2"/>
+    <rect x="449" y="150" width="198" height="42" rx="4" fill="#38BDF8"/>
+    <text x="548" y="178" text-anchor="middle" fill="#07111C" font-size="22" font-weight="700">integrates_with</text>
+    <text x="449" y="232" fill="#F8FAFC" font-size="28" font-weight="700">外部运行时</text>
+    <text x="449" y="266" fill="#94A3B8" font-size="20">固定版本，不重打包源码</text>
+    <rect x="449" y="300" width="302" height="58" rx="5" fill="#0E2635"/><text x="469" y="337" fill="#F8FAFC" font-size="23">flyai-cli @1.0.16</text>
+    <rect x="449" y="374" width="302" height="58" rx="5" fill="#0E2635"/><text x="469" y="411" fill="#F8FAFC" font-size="23">variflight-mcp @1.0.3</text>
+    <rect x="449" y="448" width="302" height="58" rx="5" fill="#0E2635"/><text x="469" y="485" fill="#F8FAFC" font-size="23">AMAP · 12306 · EGO</text>
+
+    <rect x="810" y="126" width="350" height="420" rx="7" fill="#111827" stroke="#94A3B8" stroke-width="2" stroke-dasharray="10 8"/>
+    <rect x="834" y="150" width="166" height="42" rx="4" fill="#334155"/>
+    <text x="917" y="178" text-anchor="middle" fill="#F8FAFC" font-size="22" font-weight="700">inspired_by</text>
+    <text x="834" y="232" fill="#F8FAFC" font-size="28" font-weight="700">架构与方法参考</text>
+    <text x="834" y="266" fill="#94A3B8" font-size="20">无源码复制，不标记为 Fork</text>
+    <rect x="834" y="300" width="302" height="58" rx="5" fill="#172033"/><text x="854" y="337" fill="#F8FAFC" font-size="22">travel planner skills</text>
+    <rect x="834" y="374" width="302" height="58" rx="5" fill="#172033"/><text x="854" y="411" fill="#F8FAFC" font-size="22">provider health patterns</text>
+    <rect x="834" y="448" width="302" height="58" rx="5" fill="#172033"/><text x="854" y="485" fill="#F8FAFC" font-size="21">beautify-github-readme</text>
+  </g>
+  <text x="42" y="578" fill="#94A3B8" font-size="24" font-weight="500" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">FULL URLS + LICENSES + REVISIONS STAY IN MARKDOWN</text>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 96" role="img" aria-labelledby="title desc">
+  <title id="title">能力路由</title>
+  <desc id="desc">编号 02 的能力路由章节标尺，一条主线分发到多个执行节点。</desc>
+  <rect width="1200" height="96" rx="6" fill="#0B0F17"/>
+  <rect x="28" y="24" width="146" height="48" rx="5" fill="#38BDF8"/>
+  <text x="101" y="56" text-anchor="middle" fill="#07111C" font-size="24" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">02 · ROUTE</text>
+  <text x="208" y="59" fill="#F8FAFC" font-size="40" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">能力路由</text>
+  <path d="M420 48H680M680 48V25M680 48V71M680 25H1125M680 71H1125" fill="none" stroke="#334155" stroke-width="2"/>
+  <circle cx="680" cy="48" r="10" fill="#F43F5E"/>
+  <circle cx="880" cy="25" r="7" fill="#38BDF8"/>
+  <circle cx="1010" cy="71" r="7" fill="#FBBF24"/>
+  <circle cx="1125" cy="25" r="8" fill="#34D399"/>
+  <circle cx="1125" cy="71" r="8" fill="#34D399"/>
+  <text x="1128" y="84" text-anchor="end" fill="#94A3B8" font-size="20" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">DISPATCH · 6 SKILLS</text>
+</svg>

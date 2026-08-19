@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" role="img" aria-labelledby="title desc">
+  <title id="title">供应商调用工作流</title>
+  <desc id="desc">行程规划经过需求解析、并发查询、按需核验和合成交付四个阶段。</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#64748B"/></marker></defs>
+  <rect width="1200" height="600" rx="8" fill="#0B0F17"/>
+  <text x="42" y="54" fill="#F8FAFC" font-size="36" font-weight="700" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">主数据先行，增强核验按需介入</text>
+  <text x="42" y="88" fill="#94A3B8" font-size="24" font-weight="500" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">PARSE → QUERY IN PARALLEL → VERIFY IF NEEDED → DELIVER</text>
+
+  <line x1="288" y1="318" x2="324" y2="318" stroke="#64748B" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="578" y1="318" x2="614" y2="318" stroke="#64748B" stroke-width="4" marker-end="url(#arrow)"/>
+  <line x1="868" y1="318" x2="904" y2="318" stroke="#64748B" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">
+    <rect x="40" y="132" width="242" height="372" rx="7" fill="#111827" stroke="#334155" stroke-width="2"/>
+    <text x="66" y="174" fill="#F43F5E" font-size="22" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">STAGE 01 · PARSE</text>
+    <text x="66" y="224" fill="#F8FAFC" font-size="32" font-weight="700">解析需求</text>
+    <line x1="66" y1="250" x2="256" y2="250" stroke="#334155" stroke-width="2"/>
+    <text x="66" y="294" fill="#CBD5E1" font-size="24">出发地 / 目的地</text>
+    <text x="66" y="338" fill="#CBD5E1" font-size="24">日期 / 人数 / 行李</text>
+    <text x="66" y="382" fill="#CBD5E1" font-size="24">预算 / 时间 / 疲劳</text>
+    <circle cx="92" cy="454" r="12" fill="#34D399"/><text x="120" y="462" fill="#94A3B8" font-size="21">TravelRequest</text>
+
+    <rect x="330" y="132" width="242" height="372" rx="7" fill="#111827" stroke="#F43F5E" stroke-width="2"/>
+    <text x="356" y="174" fill="#F43F5E" font-size="22" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">STAGE 02 · QUERY</text>
+    <text x="356" y="224" fill="#F8FAFC" font-size="32" font-weight="700">并发主查</text>
+    <line x1="356" y1="250" x2="546" y2="250" stroke="#334155" stroke-width="2"/>
+    <rect x="356" y="282" width="190" height="48" rx="5" fill="#181826"/><text x="376" y="314" fill="#F8FAFC" font-size="23">FlyAI / 飞猪</text>
+    <rect x="356" y="346" width="190" height="48" rx="5" fill="#181826"/><text x="376" y="378" fill="#F8FAFC" font-size="23">12306 MCP</text>
+    <rect x="356" y="410" width="190" height="48" rx="5" fill="#181826"/><text x="376" y="442" fill="#F8FAFC" font-size="23">高德 Web Service</text>
+
+    <rect x="620" y="132" width="242" height="372" rx="7" fill="#111827" stroke="#38BDF8" stroke-width="2" stroke-dasharray="10 8"/>
+    <text x="646" y="174" fill="#38BDF8" font-size="22" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">STAGE 03 · VERIFY</text>
+    <text x="646" y="224" fill="#F8FAFC" font-size="32" font-weight="700">按需增强</text>
+    <line x1="646" y1="250" x2="836" y2="250" stroke="#334155" stroke-width="2"/>
+    <text x="646" y="296" fill="#CBD5E1" font-size="24">飞常准：状态 / 准点率</text>
+    <text x="646" y="340" fill="#CBD5E1" font-size="24">Ego：登录价 / 页面证据</text>
+    <rect x="646" y="390" width="190" height="62" rx="5" fill="#0E2635" stroke="#38BDF8"/>
+    <text x="741" y="418" text-anchor="middle" fill="#38BDF8" font-size="20" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">CONDITIONAL GATE</text>
+    <text x="741" y="442" text-anchor="middle" fill="#94A3B8" font-size="19">只有必要时进入</text>
+
+    <rect x="910" y="132" width="250" height="372" rx="7" fill="#111827" stroke="#34D399" stroke-width="2"/>
+    <text x="936" y="174" fill="#34D399" font-size="22" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">STAGE 04 · DELIVER</text>
+    <text x="936" y="224" fill="#F8FAFC" font-size="32" font-weight="700">合成交付</text>
+    <line x1="936" y1="250" x2="1134" y2="250" stroke="#334155" stroke-width="2"/>
+    <text x="936" y="296" fill="#CBD5E1" font-size="24">总价与耗时</text>
+    <text x="936" y="340" fill="#CBD5E1" font-size="24">换乘和缓冲</text>
+    <text x="936" y="384" fill="#CBD5E1" font-size="24">来源与查询时间</text>
+    <text x="936" y="428" fill="#CBD5E1" font-size="24">真实预订链接</text>
+    <circle cx="1126" cy="466" r="13" fill="#34D399"/>
+  </g>
+  <text x="42" y="558" fill="#94A3B8" font-size="24" font-weight="500" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">UNKNOWN STAYS UNKNOWN · NO INVENTED PRICE OR STOCK</text>
+</svg>

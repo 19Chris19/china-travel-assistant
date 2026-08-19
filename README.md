@@ -15,7 +15,19 @@
   <a href="https://github.com/19Chris19/china-travel-assistant/issues">Issues</a>
 </p>
 
-## 先用起来
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/readme/china-travel-assistant-dark.jpeg">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/readme/china-travel-assistant-light.jpeg">
+    <img src="./assets/readme/china-travel-assistant-dark.jpeg" width="100%" alt="中国出行助手旅程总览：飞机、高铁、酒店与城市路线组成完整联程">
+  </picture>
+</p>
+
+<h2 id="quickstart">快速开始</h2>
+
+<p align="center">
+  <img src="./assets/readme/section-quickstart.svg" width="100%" alt="快速开始：从安装到第一次对话">
+</p>
 
 要求 Python 3.10+、`pipx`、Node.js、`uvx`、Codex，以及已安装并可运行的 [Ego Browser](https://github.com/citrolabs/ego-lite)。
 
@@ -41,9 +53,17 @@ travel-assistant doctor
 
 默认 `doctor` 只检查本地配置、版本和运行时，不发送付费 API 请求；明确同意后才运行 `travel-assistant doctor --live`。
 
-## 能做什么
+<h2 id="routing">能力路由</h2>
+
+<p align="center">
+  <img src="./assets/readme/section-routing.svg" width="100%" alt="能力路由：一个父 Skill 调度多个执行 Skill">
+</p>
 
 顶部 GIF 展示的是本项目的核心思路：先分别查询交通和住宿，再把航班、铁路、机场/车站接驳与酒店组合成可比较的行程。六个 Skills 可以由父 Skill 自动路由，也可以显式调用：
+
+<p align="center">
+  <img src="./assets/readme/skill-system-map.svg" width="100%" alt="Skill 系统：自然语言需求进入 plan-china-trip，再路由到航班、火车、接驳、酒店与网页核验 Skill">
+</p>
 
 | Skill | 负责什么 | 主数据源 |
 | --- | --- | --- |
@@ -56,7 +76,11 @@ travel-assistant doctor
 
 租房搜索不在 v1 运行时中，相关能力计划在 v2 以原创适配器重新加入。
 
-## 调用顺序
+### 数据源如何协作
+
+<p align="center">
+  <img src="./assets/readme/provider-workflow.svg" width="100%" alt="供应商工作流：解析需求、并发主查、按需增强核验、合成交付">
+</p>
 
 ```text
 自然语言需求
@@ -72,7 +96,11 @@ FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直
 
 所有动态价格必须带来源和查询时间。缺失的票价、库存、行李或退改字段保持为“未返回”，不推断为已含税或有余票。
 
-## Key 申请与配置
+<h2 id="security">配置安全</h2>
+
+<p align="center">
+  <img src="./assets/readme/section-security.svg" width="100%" alt="配置安全：真实 Key 只存放在本地 0600 文件中">
+</p>
 
 只把真实值写入本机的 `~/.config/china-travel-assistant/credentials.env`，权限必须为 `0600`。不要把 Key 写进命令行参数、MCP URL、README、截图、Issue、HTML 或日志。完整步骤、变量映射和错误分类见 [`credentials.md`](plugins/china-travel-assistant/references/credentials.md)。
 
@@ -86,7 +114,11 @@ FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直
 
 12306 公共查询不要求 API Key；本项目使用固定提交的 [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306)。Ego Browser 的登录态由其独立应用管理，不写入本项目凭据文件。
 
-## 给 Codex 的一键部署提示词
+<p align="center">
+  <img src="./assets/readme/credential-boundary.svg" width="100%" alt="凭据边界：本地 credentials.env 可被所需供应商读取，但对话、MCP URL、Issue、日志和 Git 不含 Key">
+</p>
+
+### 给 Codex 的一键部署提示词
 
 将下面整段交给 Codex、Claude Code 或其他支持本地 Agent Skill 的工具。它会先检查环境和文件，再安装；不会索要、回显或提交真实 Key。
 
@@ -111,13 +143,21 @@ https://github.com/19Chris19/china-travel-assistant
 
 </details>
 
-## 来源与许可
+<h2 id="sources">开源来源</h2>
+
+<p align="center">
+  <img src="./assets/readme/section-sources.svg" width="100%" alt="开源来源：区分真实 Fork、外部集成与架构参考">
+</p>
 
 本仓库原创编排代码与 Skills 采用 MIT。我们诚实区分三种关系：
 
 - `forked_from`：在 `19Chris19` 账号下真实建立 Fork，并保留上游许可证和历史。
 - `integrates_with`：运行时依赖外部 CLI、MCP、官方 API 或服务，没有把对方源码重新打包进本仓库。
 - `inspired_by`：只借鉴架构或工作流，不复制源代码，也不把项目标记为 Fork。
+
+<p align="center">
+  <img src="./assets/readme/provenance-map.svg" width="100%" alt="来源关系矩阵：forked_from 保留历史与许可证，integrates_with 固定外部版本，inspired_by 不复制源码">
+</p>
 
 完整的源地址、许可证和修改说明：
 
@@ -172,4 +212,4 @@ gitleaks detect --no-banner --redact --source .
 
 ## 视觉素材
 
-顶部 GIF 由用户使用 GIFSKI 从视频导出，本仓库保留原始文件作为首页首图。两张静态 JPEG 是深色和浅色主题素材，记录在 [`assets/readme/README.md`](assets/readme/README.md)；它们不承载可复制文字、凭据或来源声明。
+顶部 GIF 由用户使用 GIFSKI 从视频导出，本仓库保留原始文件作为首页首图。两张静态 JPEG 是深色和浅色主题的旅程总览；8 个本地 SVG 负责章节节奏、Skill 路由、供应商工作流、凭据边界和开源来源。完整资产账本见 [`assets/readme/README.md`](assets/readme/README.md)。所有需要复制、搜索或经常更新的内容仍保留在 Markdown 中。

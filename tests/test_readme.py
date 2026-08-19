@@ -1,6 +1,7 @@
 import re
 import struct
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 
@@ -8,6 +9,16 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "assets" / "readme"
 README = ROOT / "README.md"
 CREDENTIALS = ROOT / "plugins" / "china-travel-assistant" / "references" / "credentials.md"
+SVG_ASSETS = (
+    "section-quickstart.svg",
+    "section-routing.svg",
+    "section-security.svg",
+    "section-sources.svg",
+    "skill-system-map.svg",
+    "provider-workflow.svg",
+    "credential-boundary.svg",
+    "provenance-map.svg",
+)
 
 
 class ReadmeTests(unittest.TestCase):
@@ -84,6 +95,40 @@ class ReadmeTests(unittest.TestCase):
     def test_copyable_urls_are_not_joined_to_chinese_punctuation(self):
         text = README.read_text(encoding="utf-8")
         self.assertNotRegex(text, r"https://[^\s)`>]+[。；，]")
+
+    def test_readme_embeds_theme_overview_and_complete_visual_sequence(self):
+        text = README.read_text(encoding="utf-8")
+        self.assertIn("<picture>", text)
+        self.assertIn("china-travel-assistant-dark.jpeg", text)
+        self.assertIn("china-travel-assistant-light.jpeg", text)
+        for name in SVG_ASSETS:
+            self.assertIn(f"./assets/readme/{name}", text)
+
+        visual_targets = re.findall(
+            r"(?:src|srcset)=[\"'](\./assets/readme/[^\"']+)[\"']|"
+            r"!\[[^]]*\]\((\./assets/readme/[^)]+)\)",
+            text,
+        )
+        flattened = [target for pair in visual_targets for target in pair if target]
+        self.assertGreaterEqual(len(flattened), 11)
+
+    def test_svg_assets_are_accessible_local_and_github_safe(self):
+        forbidden_tags = {"script", "foreignObject"}
+        for name in SVG_ASSETS:
+            path = ASSETS / name
+            self.assertTrue(path.is_file(), path)
+            self.assertLess(path.stat().st_size, 100 * 1024, path)
+            text = path.read_text(encoding="utf-8")
+            self.assertNotRegex(text, r"(?:href|src)=[\"']https?://", path)
+            self.assertNotRegex(text, r"sk-[A-Za-z0-9_-]{20,}")
+
+            root = ET.fromstring(text)
+            self.assertEqual(root.tag.rsplit("}", 1)[-1], "svg", path)
+            self.assertTrue(root.attrib.get("viewBox", "").startswith("0 0 1200 "), path)
+            child_tags = {child.tag.rsplit("}", 1)[-1] for child in root.iter()}
+            self.assertIn("title", child_tags, path)
+            self.assertIn("desc", child_tags, path)
+            self.assertTrue(forbidden_tags.isdisjoint(child_tags), path)
 
 
 if __name__ == "__main__":
