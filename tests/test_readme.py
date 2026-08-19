@@ -66,9 +66,10 @@ class ReadmeTests(unittest.TestCase):
             "https://lbs.amap.com/api/webservice/create-project-and-key",
             "https://lbs.amap.com/api/javascript-api-v2/prerequisites",
             "https://open.fly.ai/",
-            "https://mcp.variflight.com/",
+            "https://ai.variflight.com/",
         ):
             self.assertIn(url, text)
+        self.assertNotIn("https://mcp.variflight.com/", text)
         self.assertIn("~/.config/china-travel-assistant/credentials.env", text)
         self.assertIn("0600", text)
         self.assertIn("VIGOLIVE_API_KEY", text)
@@ -79,6 +80,10 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("https://github.com/oil-oil/beautify-github-readme", text)
         self.assertIn("beautify-github-readme", (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8"))
         self.assertIn("https://github.com/oil-oil/beautify-github-readme", (ROOT / "provenance.yml").read_text(encoding="utf-8"))
+
+    def test_copyable_urls_are_not_joined_to_chinese_punctuation(self):
+        text = README.read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"https://[^\s)`>]+[。；，]")
 
 
 if __name__ == "__main__":

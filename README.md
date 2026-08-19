@@ -81,7 +81,7 @@ FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直
 | 高德 Web Service | [创建项目与 Key](https://lbs.amap.com/api/webservice/create-project-and-key) | `AMAP_WEBSERVICE_KEY` | POI、公交、驾车、步行等路线 |
 | 高德 JS API | [JS API v2 前置准备](https://lbs.amap.com/api/javascript-api-v2/prerequisites) | `AMAP_JSAPI_KEY`、`AMAP_SECURITY_CODE` | 可选交互地图；不是路线服务必需项 |
 | FlyAI / 飞猪 | [FlyAI Open Platform](https://open.fly.ai/) | `FLYAI_API_KEY` | 航班和酒店的增强访问；CLI 版本固定为 `@fly-ai/flyai-cli@1.0.16` |
-| 飞常准 | [Variflight MCP](https://mcp.variflight.com/) | `VARIFLIGHT_API_KEY` | 按需核验航班状态、准点率或价格；受额度和账户权限影响 |
+| 飞常准 | [Variflight AI Open Platform](https://ai.variflight.com/) | `VARIFLIGHT_API_KEY` | 按需核验航班状态、准点率或价格；受额度和账户权限影响 |
 | Vigolive | 供应商账户 | `VIGOLIVE_API_KEY` | 仅 v2 租房预留，v1 不读取 |
 
 12306 公共查询不要求 API Key；本项目使用固定提交的 [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306)。Ego Browser 的登录态由其独立应用管理，不写入本项目凭据文件。
@@ -94,7 +94,8 @@ FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直
 <summary>展开部署提示词</summary>
 
 ```text
-请在当前机器部署 https://github.com/19Chris19/china-travel-assistant。
+请在当前机器部署以下仓库：
+https://github.com/19Chris19/china-travel-assistant
 
 1. 克隆仓库并阅读 README.md、SECURITY.md、THIRD_PARTY_NOTICES.md、provenance.yml 和 upstream-lock.yml。
 2. 检查 Python 3.10+、pipx、Node.js、npm、uvx、Codex，以及 Ego Browser 是否可用；缺少依赖时只安装公开版本，不读取或打印任何凭据。

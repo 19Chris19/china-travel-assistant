@@ -10,7 +10,7 @@
 | `AMAP_JSAPI_KEY` | 高德地图 JS API | [JS API v2 前置准备](https://lbs.amap.com/api/javascript-api-v2/prerequisites) | 否 | 可选交互地图展示 |
 | `AMAP_SECURITY_CODE` | 高德地图 JS API | 在高德控制台的 JS API 应用详情中查看安全密钥 | 否 | 仅在 JS API 前端调用需要；Web Service 路线适配器不读取 |
 | `FLYAI_API_KEY` | FlyAI / 飞猪 | [FlyAI Open Platform](https://open.fly.ai/) | 否 | FlyAI CLI 的增强访问；CLI 固定为 `@fly-ai/flyai-cli@1.0.16` |
-| `VARIFLIGHT_API_KEY` | 飞常准 | [Variflight MCP 控制台](https://mcp.variflight.com/) | 否 | 航班状态、准点率或价格增强核验；受账户额度和权限控制 |
+| `VARIFLIGHT_API_KEY` | 飞常准 | [Variflight AI Open Platform](https://ai.variflight.com/) | 否 | 航班状态、准点率或价格增强核验；受账户额度和权限控制 |
 | `VIGOLIVE_API_KEY` | Vigolive | 尚未纳入 v1 | 否 | v2 租房适配器预留，当前运行时不读取 |
 
 12306 公共查询不要求 API Key。本项目使用固定提交的 [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306)。Ego Browser 的登录态由其独立应用管理，不写入本文件；浏览器自动化只走 Ego Browser。
