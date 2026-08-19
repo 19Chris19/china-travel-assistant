@@ -1,0 +1,14 @@
+{
+  "provider_priority": {
+    "flight": ["flyai", "variflight", "ego-browser"],
+    "train": ["12306", "flyai"],
+    "hotel": ["flyai", "ego-browser"],
+    "transfer": ["amap"]
+  },
+  "browser_policy": "ego-browser-only",
+  "transaction_policy": "explicit-confirmation-before-submit",
+  "rentals": {
+    "enabled": false,
+    "target_version": "v2"
+  }
+}

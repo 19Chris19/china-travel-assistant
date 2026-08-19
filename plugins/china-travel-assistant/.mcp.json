@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "china-12306": {
+      "command": "${PLUGIN_ROOT}/scripts/run-with-credentials.sh",
+      "args": [
+        "uvx",
+        "--from",
+        "git+https://github.com/19Chris19/mcp-server-12306@1b6ee94ff801cbfe0c1e8c8bb95195466b08b6dd",
+        "mcp-server-12306"
+      ]
+    },
+    "variflight": {
+      "command": "${PLUGIN_ROOT}/scripts/run-with-credentials.sh",
+      "args": ["npx", "-y", "@variflight-ai/variflight-mcp@1.0.3"]
+    }
+  }
+}

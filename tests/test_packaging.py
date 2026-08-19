@@ -1,0 +1,94 @@
+import json
+import re
+import unittest
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PLUGIN = ROOT / "plugins" / "china-travel-assistant"
+
+
+class PackagingTests(unittest.TestCase):
+    def test_marketplace_points_to_the_plugin(self):
+        marketplace = json.loads((ROOT / ".agents" / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+        self.assertEqual(marketplace["name"], "china-travel-assistant")
+        entry = marketplace["plugins"][0]
+        self.assertEqual(entry["name"], "china-travel-assistant")
+        self.assertEqual(entry["source"]["path"], "./plugins/china-travel-assistant")
+        self.assertEqual(entry["policy"]["authentication"], "ON_INSTALL")
+
+    def test_plugin_manifest_is_public_and_complete(self):
+        manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["name"], "china-travel-assistant")
+        self.assertEqual(manifest["license"], "MIT")
+        self.assertEqual(manifest["repository"], "https://github.com/19Chris19/china-travel-assistant")
+        self.assertEqual(manifest["mcpServers"], "./.mcp.json")
+        self.assertEqual(manifest["skills"], "./skills/")
+
+    def test_mcp_config_pins_12306_and_variflight_versions(self):
+        config = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
+        rail_command = " ".join(config["china-12306"]["args"])
+        flight_command = " ".join(config["variflight"]["args"])
+        self.assertIn("1b6ee94ff801cbfe0c1e8c8bb95195466b08b6dd", rail_command)
+        self.assertIn("@variflight-ai/variflight-mcp@1.0.3", flight_command)
+        self.assertNotIn("VARIFLIGHT_API_KEY", json.dumps(config["variflight"]))
+
+    def test_credentials_template_has_names_only(self):
+        template = (ROOT / ".env.example").read_text(encoding="utf-8")
+        expected = {
+            "AMAP_WEBSERVICE_KEY",
+            "AMAP_JSAPI_KEY",
+            "AMAP_SECURITY_CODE",
+            "FLYAI_API_KEY",
+            "VARIFLIGHT_API_KEY",
+            "VIGOLIVE_API_KEY",
+        }
+        present = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", template, re.MULTILINE))
+        self.assertEqual(present, expected)
+        for line in template.splitlines():
+            if "=" in line and not line.startswith("#"):
+                self.assertEqual(line.split("=", 1)[1], "")
+
+    def test_provenance_records_required_relationship_types(self):
+        provenance = (ROOT / "provenance.yml").read_text(encoding="utf-8")
+        self.assertIn("forked_from", provenance)
+        self.assertIn("integrates_with", provenance)
+        self.assertIn("inspired_by", provenance)
+        for fork in (
+            "19Chris19/mcp-server-12306",
+            "19Chris19/amap-lbs-skill",
+            "19Chris19/flyai-skill",
+            "19Chris19/universal-travel-planner-skill",
+            "19Chris19/x-cli",
+            "19Chris19/ego-lite",
+        ):
+            self.assertIn(fork, provenance)
+
+    def test_required_publication_documents_exist(self):
+        for name in (
+            "README.md",
+            "LICENSE",
+            "THIRD_PARTY_NOTICES.md",
+            "SECURITY.md",
+            "provenance.yml",
+            "upstream-lock.yml",
+        ):
+            self.assertTrue((ROOT / name).is_file(), name)
+
+    def test_local_installer_uses_user_owned_tool_paths(self):
+        script = (ROOT / "scripts" / "install-local.sh").read_text(encoding="utf-8")
+
+        self.assertIn("python3 -m pipx", script)
+        self.assertIn('npm install -g --prefix "$HOME/.local"', script)
+        self.assertIn("@fly-ai/flyai-cli@1.0.16", script)
+
+    def test_ci_uses_live_github_actions_expressions(self):
+        workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+        self.assertNotIn(r"\${{", workflow)
+        self.assertIn("${{ matrix.python-version }}", workflow)
+        self.assertIn("${{ secrets.GITHUB_TOKEN }}", workflow)
+
+
+if __name__ == "__main__":
+    unittest.main()

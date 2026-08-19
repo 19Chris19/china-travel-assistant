@@ -1,0 +1,10 @@
+title = "China Travel Assistant secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "china-travel-provider-key"
+description = "Travel provider API key assignment"
+regex = '''(?i)(AMAP_[A-Z0-9_]*|VARIFLIGHT_API_KEY|FLYAI_API_KEY|VIGOLIVE_API_KEY)[ \t]*[=:][ \t]*["']?[A-Za-z0-9_-]{16,}'''
+keywords = ["AMAP_", "VARIFLIGHT_API_KEY", "FLYAI_API_KEY", "VIGOLIVE_API_KEY"]

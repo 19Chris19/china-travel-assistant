@@ -1,0 +1,20 @@
+{
+  "name": "china-travel-assistant",
+  "interface": {
+    "displayName": "China Travel Assistant"
+  },
+  "plugins": [
+    {
+      "name": "china-travel-assistant",
+      "source": {
+        "source": "local",
+        "path": "./plugins/china-travel-assistant"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

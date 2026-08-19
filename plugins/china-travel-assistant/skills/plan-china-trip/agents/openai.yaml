@@ -1,0 +1,4 @@
+interface:
+  display_name: "中国出行总规划"
+  short_description: "整合中国境内机票、火车、酒店、城区接驳、预算与备选方案"
+  default_prompt: "Use $plan-china-trip to handle this China travel task with current evidence and explicit price caveats."

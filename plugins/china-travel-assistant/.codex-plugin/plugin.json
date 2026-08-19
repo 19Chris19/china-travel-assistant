@@ -1,0 +1,28 @@
+{
+  "name": "china-travel-assistant",
+  "version": "0.1.0",
+  "description": "Conversation-driven China travel planning with flights, rail, hotels, AMap transfers, and Ego Browser verification.",
+  "author": {
+    "name": "19Chris19",
+    "url": "https://github.com/19Chris19"
+  },
+  "homepage": "https://github.com/19Chris19/china-travel-assistant",
+  "repository": "https://github.com/19Chris19/china-travel-assistant",
+  "license": "MIT",
+  "keywords": ["china-travel", "flights", "12306", "hotels", "amap", "ego-browser"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "China Travel Assistant",
+    "shortDescription": "Plan China trips with live transport and hotel evidence.",
+    "longDescription": "Compare domestic flights, China Railway services, hotels, airport and urban transfers, then verify login-aware pages through Ego Browser.",
+    "developerName": "19Chris19",
+    "category": "Productivity",
+    "capabilities": ["Search", "Interactive"],
+    "defaultPrompt": [
+      "Plan my China trip and compare total cost, time, and fatigue.",
+      "Find a low-cost flight and plan the airport-to-city transfer.",
+      "Compare a 12306 rail option with nearby-airport flights."
+    ]
+  }
+}

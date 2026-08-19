@@ -1,0 +1,4 @@
+interface:
+  display_name: "中国接驳规划"
+  short_description: "规划机场车站与城区公交、地铁、步行、巴士和打车接驳"
+  default_prompt: "Use $plan-china-transfers to handle this China travel task with current evidence and explicit price caveats."
