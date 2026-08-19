@@ -81,6 +81,25 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(offer.effective_total_cny, 550)
         self.assertEqual(offer.total_basis, "computed_from_explicit_components")
 
+    def test_offer_times_normalize_to_china_standard_time(self):
+        naive = TravelOffer.from_mapping(
+            {
+                "provider": "flyai",
+                "mode": "flight",
+                "departure_at": "2026-08-20T10:00:00",
+            }
+        )
+        utc = TravelOffer.from_mapping(
+            {
+                "provider": "variflight",
+                "mode": "flight",
+                "departure_at": "2026-08-20T02:00:00Z",
+            }
+        )
+
+        self.assertEqual(naive.departure_at.isoformat(), "2026-08-20T10:00:00+08:00")
+        self.assertEqual(utc.departure_at.isoformat(), "2026-08-20T10:00:00+08:00")
+
     def test_transfer_buffer_is_explicit_and_included_in_total_duration(self):
         leg = TransferLeg.from_mapping(
             {

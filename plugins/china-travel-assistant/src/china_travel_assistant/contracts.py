@@ -5,6 +5,10 @@ from datetime import date, datetime
 from enum import Enum
 from math import isfinite
 from typing import Any, Mapping
+from zoneinfo import ZoneInfo
+
+
+CHINA_TIMEZONE = ZoneInfo("Asia/Shanghai")
 
 
 class ProviderHealth(str, Enum):
@@ -36,9 +40,12 @@ def _datetime(value: Any, *, field_name: str) -> datetime | None:
         raise ValueError(f"{field_name} must be ISO-8601")
     normalized = value.replace("Z", "+00:00")
     try:
-        return datetime.fromisoformat(normalized)
+        result = datetime.fromisoformat(normalized)
     except ValueError as exc:
         raise ValueError(f"{field_name} must be ISO-8601") from exc
+    if result.tzinfo is None:
+        return result.replace(tzinfo=CHINA_TIMEZONE)
+    return result.astimezone(CHINA_TIMEZONE)
 
 
 def _money(value: Any, *, field_name: str) -> float | None:
