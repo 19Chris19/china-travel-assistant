@@ -87,6 +87,7 @@ class CliTests(unittest.TestCase):
                     "AMAP_WEBSERVICE_KEY": "no-amap",
                 },
             ),
+            patch("china_travel_assistant.cli.shutil.which", return_value="/usr/bin/flyai"),
             patch("china_travel_assistant.cli.subprocess.run", return_value=completed) as run,
             patch.dict(
                 os.environ,
