@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
+import subprocess
 import sys
 
 from .amap import AmapClient
 from .contracts import TravelOffer, TravelRequest
-from .doctor import Doctor
+from .doctor import Doctor, load_credentials
 from .offers import deduplicate_offers, rank_offers
 from .providers import build_provider_plan
 
@@ -57,6 +60,9 @@ def _parser() -> argparse.ArgumentParser:
     amap_route.add_argument("--destination", type=_coordinate, required=True)
     amap_route.add_argument("--city")
     amap_route.add_argument("--destination-city")
+
+    flyai = subparsers.add_parser("flyai", help="run the pinned FlyAI CLI with unified credentials")
+    flyai.add_argument("args", nargs=argparse.REMAINDER)
     return parser
 
 
@@ -90,9 +96,12 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps([item.__dict__ for item in plan], ensure_ascii=False, default=str))
         elif args.command == "amap-search":
-            print(json.dumps(AmapClient().text_search(args.keywords, city=args.city), ensure_ascii=False))
+            credentials = load_credentials()
+            client = AmapClient(api_key=credentials.get("AMAP_WEBSERVICE_KEY"))
+            print(json.dumps(client.text_search(args.keywords, city=args.city), ensure_ascii=False))
         elif args.command == "amap-route":
-            result = AmapClient().route(
+            credentials = load_credentials()
+            result = AmapClient(api_key=credentials.get("AMAP_WEBSERVICE_KEY")).route(
                 args.origin,
                 args.destination,
                 mode=args.mode,
@@ -100,6 +109,25 @@ def main(argv: list[str] | None = None) -> int:
                 destination_city=args.destination_city,
             )
             print(json.dumps(result, ensure_ascii=False))
+        elif args.command == "flyai":
+            if not args.args:
+                raise ValueError("flyai requires a FlyAI subcommand")
+            if not shutil.which("flyai"):
+                raise RuntimeError("flyai binary is not available")
+            environment = os.environ.copy()
+            for key in (
+                "AMAP_WEBSERVICE_KEY",
+                "AMAP_JSAPI_KEY",
+                "AMAP_SECURITY_CODE",
+                "FLYAI_API_KEY",
+                "VARIFLIGHT_API_KEY",
+                "VIGOLIVE_API_KEY",
+            ):
+                environment.pop(key, None)
+            flyai_key = load_credentials().get("FLYAI_API_KEY")
+            if flyai_key:
+                environment["FLYAI_API_KEY"] = flyai_key
+            return subprocess.run(["flyai", *args.args], env=environment, check=False).returncode
     except (TypeError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

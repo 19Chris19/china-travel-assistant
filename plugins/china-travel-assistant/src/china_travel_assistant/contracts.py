@@ -35,7 +35,9 @@ def _datetime(value: Any, *, field_name: str) -> datetime | None:
     if value is None or value == "":
         return None
     if isinstance(value, datetime):
-        return value
+        if value.tzinfo is None:
+            return value.replace(tzinfo=CHINA_TIMEZONE)
+        return value.astimezone(CHINA_TIMEZONE)
     if not isinstance(value, str):
         raise ValueError(f"{field_name} must be ISO-8601")
     normalized = value.replace("Z", "+00:00")

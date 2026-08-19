@@ -9,6 +9,6 @@ Use structured sources before page verification.
 | Hotels | FlyAI CLI | None | Ego Browser for room-level or login price checks |
 | POI and transfers | AMap | None | Not a replacement for map data |
 
-If a primary source fails, report its health state and keep independent partial results. Do not turn an optional source into an unlabeled replacement. Never claim that FlyAI CLI is a directly registered Codex MCP; it is a CLI that calls FlyAI/Fliggy services.
+If a primary source fails, report its health state and keep independent partial results. Do not turn an optional source into an unlabeled replacement. Never claim that FlyAI CLI is a directly registered Codex MCP; it is a CLI that calls FlyAI/Fliggy services. Invoke it through `travel-assistant flyai ...` so credentials come from the unified local file.
 
 Browser verification must follow `verify-travel-web`. It is a fallback and evidence surface, not a silent scraping default.

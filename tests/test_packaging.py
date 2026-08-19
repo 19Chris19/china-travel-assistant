@@ -1,5 +1,8 @@
 import json
+import os
 import re
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -81,6 +84,9 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("python3 -m pipx", script)
         self.assertIn('npm install -g --prefix "$HOME/.local"', script)
         self.assertIn("@fly-ai/flyai-cli@1.0.16", script)
+        self.assertIn("command -v uvx", script)
+        self.assertIn("command -v ego-browser", script)
+        self.assertIn("1.2.3", script)
 
     def test_ci_uses_live_github_actions_expressions(self):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -88,6 +94,63 @@ class PackagingTests(unittest.TestCase):
         self.assertNotIn(r"\${{", workflow)
         self.assertIn("${{ matrix.python-version }}", workflow)
         self.assertIn("${{ secrets.GITHUB_TOKEN }}", workflow)
+        self.assertIn("ruff check", workflow)
+        self.assertIn("pip wheel", workflow)
+
+    def test_python_distribution_includes_publication_notices(self):
+        for name in ("LICENSE", "README.md", "THIRD_PARTY_NOTICES.md"):
+            self.assertTrue((PLUGIN / name).is_file(), name)
+        self.assertEqual(
+            (PLUGIN / "LICENSE").read_text(encoding="utf-8"),
+            (ROOT / "LICENSE").read_text(encoding="utf-8"),
+        )
+
+    def test_mcp_launcher_exposes_only_provider_specific_credentials(self):
+        launcher = PLUGIN / "scripts" / "run-with-credentials.sh"
+        with tempfile.TemporaryDirectory() as directory:
+            credentials = Path(directory) / "credentials.env"
+            credentials.write_text(
+                "AMAP_WEBSERVICE_KEY=amap-test\n"
+                "FLYAI_API_KEY=fly-test\n"
+                "VARIFLIGHT_API_KEY=vari-test\n",
+                encoding="utf-8",
+            )
+            base_env = {
+                "PATH": os.environ["PATH"],
+                "XDG_CONFIG_HOME": directory,
+            }
+            xdg_credentials = Path(directory) / "china-travel-assistant" / "credentials.env"
+            xdg_credentials.parent.mkdir(exist_ok=True)
+            credentials.replace(xdg_credentials)
+            rail = subprocess.run(
+                [str(launcher), "12306", "env"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=base_env,
+            )
+            variflight = subprocess.run(
+                [str(launcher), "variflight", "env"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=base_env,
+            )
+            environment_override = subprocess.run(
+                [str(launcher), "variflight", "env"],
+                check=True,
+                capture_output=True,
+                text=True,
+                env={**base_env, "VARIFLIGHT_API_KEY": "env-test"},
+            )
+
+        for secret in ("amap-test", "fly-test", "vari-test"):
+            self.assertNotIn(secret, rail.stdout)
+        self.assertNotIn("amap-test", variflight.stdout)
+        self.assertNotIn("fly-test", variflight.stdout)
+        self.assertIn("VARIFLIGHT_API_KEY=vari-test", variflight.stdout)
+        self.assertIn("VARIFLIGHT_API_KEY=env-test", environment_override.stdout)
+        self.assertNotIn("VARIFLIGHT_API_KEY=vari-test", environment_override.stdout)
 
 
 if __name__ == "__main__":

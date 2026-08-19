@@ -6,8 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "china-travel-assistant"
 version = "0.1.0"
 description = "Deterministic contracts and diagnostics for a China travel Codex plugin"
+readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { file = "LICENSE" }
 authors = [{ name = "19Chris19" }]
 dependencies = []
 
@@ -19,3 +20,6 @@ package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.data-files]
+"share/doc/china-travel-assistant" = ["README.md", "THIRD_PARTY_NOTICES.md"]

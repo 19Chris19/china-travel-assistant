@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -13,8 +14,11 @@ from urllib.request import Request, urlopen
 from .contracts import ProviderHealth
 
 
-DEFAULT_CREDENTIALS_PATH = Path.home() / ".config" / "china-travel-assistant" / "credentials.env"
 RAIL_REVISION = "1b6ee94ff801cbfe0c1e8c8bb95195466b08b6dd"
+EGO_SKILL_PATHS = (
+    Path.home() / ".agents" / "skills" / "ego-browser" / "SKILL.md",
+    Path.home() / ".codex" / "skills" / "ego-browser" / "SKILL.md",
+)
 
 
 class ProviderProbeError(RuntimeError):
@@ -65,7 +69,13 @@ def probe_variflight(api_key: str | None) -> None:
         raise ProviderProbeError(ProviderHealth.DEGRADED)
 
 
-def load_credentials(path: Path = DEFAULT_CREDENTIALS_PATH) -> dict[str, str]:
+def _default_credentials_path() -> Path:
+    config_root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
+    return config_root / "china-travel-assistant" / "credentials.env"
+
+
+def load_credentials(path: Path | None = None) -> dict[str, str]:
+    path = path or _default_credentials_path()
     values: dict[str, str] = {}
     if path.exists():
         for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -119,12 +129,24 @@ def _binary_version(binary: str, path: str) -> str:
     return parts[1] if len(parts) > 1 else parts[0]
 
 
+def _ego_skill_version(paths: tuple[Path, ...] = EGO_SKILL_PATHS) -> str:
+    pattern = re.compile(r'^\s*version:\s*["\']?([^"\'\s]+)', re.MULTILINE)
+    for path in paths:
+        try:
+            match = pattern.search(path.read_text(encoding="utf-8"))
+        except OSError:
+            continue
+        if match:
+            return match.group(1)
+    return "not-installed"
+
+
 class Doctor:
     def __init__(
         self,
         *,
         live: bool = False,
-        credentials_path: Path = DEFAULT_CREDENTIALS_PATH,
+        credentials_path: Path | None = None,
         probes: Mapping[str, Callable[[str | None], object]] | None = None,
     ) -> None:
         self.live = live
@@ -147,10 +169,7 @@ class Doctor:
             "12306": self._binary_provider(
                 "12306", "uvx", required=True, unverified=True, version=f"git:{RAIL_REVISION}"
             ),
-            "ego-browser": {
-                **self._binary_provider("ego-browser", "ego-browser", required=False),
-                "skill_version": "1.2.3",
-            },
+            "ego-browser": self._ego_provider(),
         }
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return result
@@ -227,3 +246,13 @@ class Doctor:
             "required": str(required).lower(),
             "version": detected_version,
         }
+
+    @staticmethod
+    def _ego_provider() -> dict[str, str]:
+        result = Doctor._binary_provider("ego-browser", "ego-browser", required=False)
+        skill_version = _ego_skill_version()
+        result["skill_version"] = skill_version
+        if result["status"] == ProviderHealth.READY.value and skill_version == "not-installed":
+            result["status"] = ProviderHealth.DEGRADED.value
+            result["check"] = "binary_present_skill_missing"
+        return result

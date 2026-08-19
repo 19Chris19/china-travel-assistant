@@ -11,7 +11,7 @@
 - 安全边界：只查询、比较和生成真实链接；提交订单、实名、支付和退改必须单独确认。
 - 租房：不在 v1 运行时中，计划在 v2 以原创适配器重新加入。
 
-FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直接 MCP。浏览器自动化统一使用 [Ego Browser](https://github.com/citrolabs/ego-lite)。
+FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直接 MCP。运行时通过 `travel-assistant flyai ...` 注入统一凭据文件。浏览器自动化统一使用 [Ego Browser](https://github.com/citrolabs/ego-lite)。
 
 ## 安装
 

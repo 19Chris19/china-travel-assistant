@@ -10,7 +10,7 @@ Use FlyAI for the initial hotel search and room candidates. Use Ego Browser only
 ## Workflow
 
 1. Normalize city, neighborhood/POI, check-in/check-out dates, travelers, rooms, budget, and priorities.
-2. Search FlyAI and preserve property ID/name, address, room type, occupancy, nightly and total price, tax status, cancellation rules, rating, distance, query time, and detail link.
+2. Search FlyAI through `travel-assistant flyai ...`, which injects the unified credentials file, and preserve property ID/name, address, room type, occupancy, nightly and total price, tax status, cancellation rules, rating, distance, query time, and detail link.
 3. Separate list-level lead-in prices from room-level verified prices. Never claim a lead-in price is bookable for the user's dates without room details.
 4. Rank by the user's priority: price, distance, cancellation flexibility, transit access, or balanced value. Missing fields remain unknown.
 5. If page verification is needed, invoke `verify-travel-web` with the exact property URL and keep the API result and page evidence as separate sources.

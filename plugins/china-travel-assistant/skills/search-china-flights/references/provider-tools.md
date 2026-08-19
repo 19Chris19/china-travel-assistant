@@ -4,7 +4,7 @@
 
 Required package: `@fly-ai/flyai-cli@1.0.16`.
 
-Before searching, run `flyai search-flight --help` or read the installed command reference. Use its structured flight search for the primary result and preserve returned booking links. `FLYAI_API_KEY` is optional enhanced access; do not require it for trial access when the installed CLI supports an unauthenticated query.
+Before searching, run `travel-assistant flyai search-flight --help` or read the installed command reference. Use `travel-assistant flyai ...` for provider calls so `FLYAI_API_KEY` can come from the unified credentials file. Preserve returned booking links. `FLYAI_API_KEY` is optional enhanced access; do not require it for trial access when the installed CLI supports an unauthenticated query.
 
 ## Variflight
 

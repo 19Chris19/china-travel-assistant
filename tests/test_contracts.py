@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timezone
 from math import inf, nan
 
 from china_travel_assistant.contracts import (
@@ -99,6 +100,15 @@ class ContractTests(unittest.TestCase):
 
         self.assertEqual(naive.departure_at.isoformat(), "2026-08-20T10:00:00+08:00")
         self.assertEqual(utc.departure_at.isoformat(), "2026-08-20T10:00:00+08:00")
+
+        datetime_value = TravelOffer.from_mapping(
+            {
+                "provider": "12306",
+                "mode": "train",
+                "departure_at": datetime(2026, 8, 20, 2, 0, tzinfo=timezone.utc),
+            }
+        )
+        self.assertEqual(datetime_value.departure_at.isoformat(), "2026-08-20T10:00:00+08:00")
 
     def test_transfer_buffer_is_explicit_and_included_in_total_duration(self):
         leg = TransferLeg.from_mapping(

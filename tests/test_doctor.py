@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError
 
-from china_travel_assistant.doctor import Doctor, load_credentials
+from china_travel_assistant.doctor import Doctor, _ego_skill_version, load_credentials
 
 
 class DoctorTests(unittest.TestCase):
@@ -23,6 +23,16 @@ class DoctorTests(unittest.TestCase):
 
         self.assertEqual(values["AMAP_WEBSERVICE_KEY"], "from-env")
         self.assertEqual(values["VARIFLIGHT_API_KEY"], "file-key")
+
+    def test_default_credentials_path_respects_xdg_config_home(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "china-travel-assistant" / "credentials.env"
+            path.parent.mkdir()
+            path.write_text("AMAP_WEBSERVICE_KEY=xdg-key\n", encoding="utf-8")
+            with patch.dict(os.environ, {"XDG_CONFIG_HOME": directory}, clear=True):
+                values = load_credentials()
+
+        self.assertEqual(values["AMAP_WEBSERVICE_KEY"], "xdg-key")
 
     def test_default_doctor_does_not_call_live_probes_or_print_secrets(self):
         secret = "secret-value-that-must-not-appear"
@@ -61,7 +71,10 @@ class DoctorTests(unittest.TestCase):
 
     def test_doctor_reports_provider_and_runtime_versions(self):
         output = io.StringIO()
-        with redirect_stdout(output):
+        with (
+            patch("china_travel_assistant.doctor._ego_skill_version", return_value="1.2.3"),
+            redirect_stdout(output),
+        ):
             result = Doctor(live=False).run()
 
         for provider in ("amap", "flyai", "variflight", "12306", "ego-browser"):
@@ -69,6 +82,16 @@ class DoctorTests(unittest.TestCase):
         self.assertEqual(result["amap"]["version"], "web-service-v3-v5")
         self.assertEqual(result["variflight"]["version"], "1.0.3")
         self.assertEqual(result["ego-browser"]["skill_version"], "1.2.3")
+
+    def test_ego_skill_version_is_read_from_installed_frontmatter(self):
+        with tempfile.TemporaryDirectory() as directory:
+            skill = Path(directory) / "SKILL.md"
+            skill.write_text(
+                '---\nname: ego-browser\nmetadata:\n  version: "1.2.3"\n---\n',
+                encoding="utf-8",
+            )
+
+            self.assertEqual(_ego_skill_version((skill,)), "1.2.3")
 
     def test_12306_configuration_is_not_inferred_from_generic_uvx(self):
         doctor = Doctor(live=False)
