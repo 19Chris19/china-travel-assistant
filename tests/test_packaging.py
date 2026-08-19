@@ -98,6 +98,9 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("pip wheel", workflow)
 
     def test_python_distribution_includes_publication_notices(self):
+        pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('license = "MIT"', pyproject)
+        self.assertIn('license-files = ["LICENSE"]', pyproject)
         for name in ("LICENSE", "README.md", "THIRD_PARTY_NOTICES.md"):
             self.assertTrue((PLUGIN / name).is_file(), name)
         self.assertEqual(
