@@ -27,4 +27,8 @@ The following repositories were forked under the GitHub account 19Chris19. Their
 - BENZEMA216/rent-ops uses CC-BY-NC-4.0. It is excluded from the MIT core.
 - Yyh3/china-travel-planner-skills, 618034128/Travel-Planning-Skill, ZawYePhyo/travel-planner-skill, GruntworkAI/gruntwork-travel-skills, and SquirrelSong5/travel-planner-skill informed architectural evaluation. No source is vendored.
 
+## README Design Reference
+
+- [oil-oil/beautify-github-readme](https://github.com/oil-oil/beautify-github-readme) is an MIT-licensed README design reference. This project uses its documented principles for a project-native hero, local visual assets, and readable Markdown; no source is copied and the project is not a Fork.
+
 Machine-readable details and pinned revisions are in provenance.yml and upstream-lock.yml.
