@@ -61,3 +61,8 @@ relationships:
   - type: "inspired_by"
     upstream: "https://github.com/SquirrelSong5/travel-planner-skill"
     use: "Domestic POI and route validation"
+  - type: "inspired_by"
+    upstream: "https://github.com/oil-oil/beautify-github-readme"
+    revision: "55bdb1c05414cd7a0cf911d02e55ece79777206e"
+    license: "MIT"
+    use: "README visual hierarchy and maintainable local asset guidance; no source copied"

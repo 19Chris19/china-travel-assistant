@@ -27,3 +27,9 @@ packages:
     version: "1.0.3"
     registry_license: "ISC"
     repository_license_file: "missing"
+references:
+  - repository: "https://github.com/oil-oil/beautify-github-readme"
+    revision: "55bdb1c05414cd7a0cf911d02e55ece79777206e"
+    license: "MIT"
+    relationship: "inspired_by"
+    use: "README visual hierarchy and maintainable local asset guidance; no source copied"

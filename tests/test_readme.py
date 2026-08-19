@@ -74,6 +74,12 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("VIGOLIVE_API_KEY", text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9_-]{20,}")
 
+    def test_readme_design_tool_is_credited_as_inspiration(self):
+        text = README.read_text(encoding="utf-8")
+        self.assertIn("https://github.com/oil-oil/beautify-github-readme", text)
+        self.assertIn("beautify-github-readme", (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8"))
+        self.assertIn("https://github.com/oil-oil/beautify-github-readme", (ROOT / "provenance.yml").read_text(encoding="utf-8"))
+
 
 if __name__ == "__main__":
     unittest.main()

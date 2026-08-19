@@ -124,6 +124,7 @@ FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直
 - [机器可读来源关系](provenance.yml)
 - [Fork 提交与外部包版本锁定](upstream-lock.yml)
 - [凭据申请和本地配置文档](plugins/china-travel-assistant/references/credentials.md)
+- 本页的视觉整理参考了 [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme)，仅作为 README 设计方法参考，没有复制其源码或标记为 Fork。
 
 ### 真实 Fork
 
