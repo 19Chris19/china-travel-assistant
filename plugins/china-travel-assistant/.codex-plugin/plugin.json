@@ -1,6 +1,6 @@
 {
   "name": "china-travel-assistant",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent-invoked China travel Skill Plugin with OmniRoute exploration and exact visual itineraries.",
   "author": {
     "name": "19Chris19",

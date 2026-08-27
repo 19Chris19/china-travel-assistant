@@ -7,6 +7,16 @@
   },
   "browser_policy": "ego-browser-only",
   "transaction_policy": "explicit-confirmation-before-submit",
+  "exploration": {
+    "default_tier": "auto",
+    "auto_bias": "pro",
+    "pro_max_requires_explicit": true
+  },
+  "presentation": {
+    "default": "auto",
+    "preferred": "visualize",
+    "local_fallback": "html"
+  },
   "rentals": {
     "enabled": false,
     "target_version": "v2"

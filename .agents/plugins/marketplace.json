@@ -1,7 +1,7 @@
 {
   "name": "china-travel-assistant",
   "interface": {
-    "displayName": "China Travel Assistant"
+    "displayName": "TianShu TravelOS Agent Skill"
   },
   "plugins": [
     {

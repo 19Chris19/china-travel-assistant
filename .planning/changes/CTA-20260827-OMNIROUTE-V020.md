@@ -38,9 +38,14 @@ Ship a stable Agent Skill release that generates and verifies conventional and n
 
 ## Verification
 
-Record each commit's targeted tests and the final release gates in this file before merge.
+- Baseline: `77/77` tests and Plugin validation passed at `d82a1d6`.
+- Feature branch: `103/103` tests passed with Python 3.13.
+- Ruff, compileall, official Plugin validation, README/SVG safety tests, release YAML parsing, and full-repository Gitleaks passed.
+- Built `china_travel_assistant-0.2.0-py3-none-any.whl` and a clean `china-travel-assistant-plugin-v0.2.0.zip`; generated SHA-256 checksums.
+- Installed the wheel into an isolated environment and verified Auto resolves to Pro and deterministic HTML preserves itinerary facts.
+- Local Python 3.10 is unavailable. GitHub CI `test (3.10)`, `test (3.13)`, and `secrets` must all pass before merge.
+- Live AMap and Variflight E2E remains intentionally unavailable until the user rotates exposed credentials and fills only the local `0600` file.
 
 ## Rollback
 
 Revert the merge commit or reinstall release `v0.1.0`. Provider credentials remain outside Git and require no repository rollback.
-
