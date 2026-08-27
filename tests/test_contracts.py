@@ -3,7 +3,15 @@ from datetime import datetime, timezone
 from math import inf, nan
 
 from china_travel_assistant.contracts import (
+    EvidenceStatus,
+    ExplorationPolicy,
+    ExplorationTier,
+    ItineraryCandidate,
+    ItineraryLeg,
+    PresentationCapabilities,
+    PresentationMode,
     ProviderHealth,
+    RiskLevel,
     TransferLeg,
     TravelOffer,
     TravelRequest,
@@ -11,6 +19,95 @@ from china_travel_assistant.contracts import (
 
 
 class ContractTests(unittest.TestCase):
+    def test_request_defaults_to_auto_and_preserves_shared_capabilities(self):
+        request = TravelRequest.from_mapping(
+            {
+                "origin": "沈阳",
+                "destination": "苏州",
+                "date_start": "2026-08-31",
+                "student_fare": True,
+                "allow_overnight": False,
+            }
+        )
+
+        self.assertEqual(request.exploration_tier, ExplorationTier.AUTO)
+        self.assertTrue(request.student_fare)
+        self.assertFalse(request.allow_overnight)
+        self.assertEqual(request.to_dict()["exploration_tier"], "auto")
+
+    def test_request_accepts_explicit_pro_max_and_challenge_tolerance(self):
+        request = TravelRequest.from_mapping(
+            {
+                "origin": "沈阳",
+                "destination": "苏州",
+                "date_start": "2026-08-31",
+                "tier": "pro_max",
+                "risk_tolerance": "challenge",
+                "arrival_deadline": "2026-09-01T08:00:00+08:00",
+            }
+        )
+
+        self.assertEqual(request.exploration_tier, ExplorationTier.PRO_MAX)
+        self.assertEqual(request.risk_tolerance, RiskLevel.CHALLENGE)
+        self.assertEqual(request.arrival_deadline.hour, 8)
+
+    def test_request_rejects_unknown_tier_and_non_boolean_flags(self):
+        base = {"origin": "沈阳", "destination": "苏州", "date_start": "2026-08-31"}
+
+        with self.assertRaisesRegex(ValueError, "exploration_tier"):
+            TravelRequest.from_mapping({**base, "tier": "extreme"})
+        with self.assertRaisesRegex(ValueError, "student_fare"):
+            TravelRequest.from_mapping({**base, "student_fare": "sometimes"})
+
+    def test_itinerary_contract_preserves_unknowns_and_evidence(self):
+        leg = ItineraryLeg.from_mapping(
+            {
+                "leg_id": "flight-1",
+                "mode": "flight",
+                "origin": "沈阳桃仙",
+                "destination": "合肥新桥",
+                "provider": "flyai",
+                "service_number": "9C0001",
+                "evidence_status": "verified",
+            }
+        )
+        candidate = ItineraryCandidate(
+            itinerary_id="creative-1",
+            title="合肥飞铁组合",
+            tier=ExplorationTier.PRO,
+            legs=(leg,),
+            risk_level=RiskLevel.MANAGED,
+            evidence_status=EvidenceStatus.PARTIAL,
+            unknown_fields=("total_price_cny",),
+        )
+
+        payload = candidate.to_dict()
+        self.assertIsNone(payload["total_price_cny"])
+        self.assertEqual(payload["legs"][0]["evidence_status"], "verified")
+        self.assertEqual(payload["unknown_fields"], ["total_price_cny"])
+
+    def test_presentation_capability_prefers_visualize_then_exact_fallbacks(self):
+        self.assertEqual(PresentationCapabilities(visualize=True).choose(), PresentationMode.VISUALIZE)
+        self.assertEqual(PresentationCapabilities(visualize=False).choose(), PresentationMode.HTML)
+        with self.assertRaisesRegex(ValueError, "unavailable"):
+            PresentationCapabilities(visualize=False).choose(PresentationMode.VISUALIZE)
+
+    def test_exploration_policy_serializes_public_enum_values(self):
+        policy = ExplorationPolicy(
+            tier=ExplorationTier.PRO,
+            max_hypotheses=24,
+            max_self_transfers=2,
+            max_modes=3,
+            hub_radius_km=350,
+            date_flexibility_days=1,
+            allow_overnight=True,
+            novelty_weight=0.5,
+            risk_budget=RiskLevel.MANAGED,
+        )
+
+        self.assertEqual(policy.to_dict()["tier"], "pro")
+        self.assertEqual(policy.to_dict()["risk_budget"], "managed")
+
     def test_request_normalizes_dates_and_defaults(self):
         request = TravelRequest.from_mapping(
             {
