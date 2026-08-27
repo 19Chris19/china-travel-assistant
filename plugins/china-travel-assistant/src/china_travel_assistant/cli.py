@@ -13,6 +13,7 @@ from .contracts import ExplorationTier, ItineraryLeg, PresentationMode, TravelOf
 from .doctor import Doctor, load_credentials
 from .offers import deduplicate_offers, rank_offers
 from .omniroute import plan_trip
+from .presentation import render_plan
 from .providers import build_provider_plan
 
 
@@ -70,6 +71,16 @@ def _parser() -> argparse.ArgumentParser:
     plan.add_argument("json", nargs="?")
     plan.add_argument("--tier", choices=tuple(item.value for item in ExplorationTier))
     plan.add_argument("--presentation", choices=tuple(item.value for item in PresentationMode), default="auto")
+
+    render = subparsers.add_parser("render-plan", help="render itinerary JSON as exact local HTML, SVG, or Markdown")
+    render.add_argument("json", nargs="?")
+    render.add_argument(
+        "--format",
+        choices=("auto", "html", "svg", "markdown"),
+        default="auto",
+        dest="presentation_format",
+    )
+    render.add_argument("--output")
     return parser
 
 
@@ -156,6 +167,17 @@ def main(argv: list[str] | None = None) -> int:
             result = plan_trip(request, legs)
             result["presentation_requested"] = args.presentation
             print(json.dumps(result, ensure_ascii=False))
+        elif args.command == "render-plan":
+            payload = _read_json(args.json)
+            if not isinstance(payload, dict):
+                raise ValueError("render-plan expects a JSON object")
+            mode, rendered = render_plan(payload, PresentationMode(args.presentation_format))
+            if args.output:
+                with open(args.output, "w", encoding="utf-8") as output:
+                    output.write(rendered)
+                print(json.dumps({"format": mode.value, "output": args.output}, ensure_ascii=False))
+            else:
+                print(rendered, end="")
     except (TypeError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
