@@ -45,6 +45,8 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("git clone https://github.com/19Chris19/china-travel-assistant", text)
         self.assertIn("./scripts/install-local.sh", text)
         self.assertIn("使用 $plan-china-trip", text)
+        self.assertIn("Agent Skill", text[:2000])
+        self.assertIn("Release v0.2.0", text[:2000])
 
     def test_readme_contains_runtime_capabilities_and_source_relationships(self):
         text = README.read_text(encoding="utf-8")
@@ -55,6 +57,8 @@ class ReadmeTests(unittest.TestCase):
             "$plan-china-transfers",
             "$search-china-hotels",
             "$verify-travel-web",
+            "$explore-china-routes",
+            "$present-china-trip",
         ):
             self.assertIn(name, text)
         for relationship in ("forked_from", "integrates_with", "inspired_by"):
@@ -71,6 +75,16 @@ class ReadmeTests(unittest.TestCase):
         for safety_phrase in ("不执行实名", "不执行支付", "不输出真实 Key"):
             self.assertIn(safety_phrase, text)
 
+    def test_readme_explains_tiers_and_visualize_fallbacks(self):
+        text = README.read_text(encoding="utf-8")
+        for tier in ("Standard", "Pro", "Pro Max"):
+            self.assertIn(tier, text)
+        self.assertIn("普通请求的 Auto 默认", text)
+        self.assertIn("只能由用户显式选择", text)
+        self.assertIn("https://learn.chatgpt.com/docs/visualizations", text)
+        self.assertIn("travel-assistant render-plan", text)
+        self.assertIn("ImageGen 不进入事实链", text)
+
     def test_credentials_document_links_official_application_and_local_setup(self):
         text = CREDENTIALS.read_text(encoding="utf-8")
         for url in (
@@ -85,6 +99,10 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("0600", text)
         self.assertIn("VIGOLIVE_API_KEY", text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9_-]{20,}")
+        self.assertIn("2026-08-27", text)
+        self.assertIn("150,000", text)
+        self.assertIn("5,000", text)
+        self.assertIn("¥50", text)
 
     def test_readme_design_tool_is_credited_as_inspiration(self):
         text = README.read_text(encoding="utf-8")
