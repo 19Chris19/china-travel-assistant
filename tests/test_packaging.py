@@ -28,6 +28,15 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(manifest["mcpServers"], "./.mcp.json")
         self.assertEqual(manifest["skills"], "./skills/")
 
+    def test_release_versions_are_consistent(self):
+        manifest = json.loads((PLUGIN / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")
+        init_text = (PLUGIN / "src" / "china_travel_assistant" / "__init__.py").read_text(encoding="utf-8")
+
+        self.assertEqual(manifest["version"], "0.2.0")
+        self.assertRegex(pyproject, r'(?m)^version = "0\.2\.0"$')
+        self.assertIn('__version__ = "0.2.0"', init_text)
+
     def test_mcp_config_pins_12306_and_variflight_versions(self):
         config = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
         rail_command = " ".join(config["china-12306"]["args"])
@@ -96,6 +105,26 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("${{ secrets.GITHUB_TOKEN }}", workflow)
         self.assertIn("ruff check", workflow)
         self.assertIn("pip wheel", workflow)
+
+    def test_release_workflow_builds_checksumed_plugin_and_wheel(self):
+        workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+
+        self.assertIn('tags:\n      - "v*"', workflow)
+        self.assertIn("python -m build --wheel", workflow)
+        self.assertIn("china-travel-assistant-plugin-${GITHUB_REF_NAME}.zip", workflow)
+        self.assertIn('"*/build/*"', workflow)
+        self.assertIn("SHA256SUMS", workflow)
+        self.assertIn("gh release create", workflow)
+        self.assertIn("--verify-tag", workflow)
+        self.assertNotIn(r"\${{", workflow)
+
+    def test_release_notes_and_changelog_name_the_skill_release(self):
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        notes = (ROOT / ".github" / "release-notes" / "v0.2.0.md").read_text(encoding="utf-8")
+
+        self.assertIn("## [0.2.0] - 2026-08-27", changelog)
+        self.assertIn("eight-Skill Agent Plugin", notes)
+        self.assertIn("天枢 TravelOS", notes)
 
     def test_python_distribution_includes_publication_notices(self):
         pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")

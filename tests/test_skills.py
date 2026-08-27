@@ -12,6 +12,8 @@ EXPECTED = {
     "plan-china-transfers",
     "search-china-hotels",
     "verify-travel-web",
+    "explore-china-routes",
+    "present-china-trip",
 }
 
 
@@ -54,6 +56,25 @@ class SkillTests(unittest.TestCase):
             metadata = (SKILLS / name / "agents" / "openai.yaml").read_text(encoding="utf-8")
             self.assertIn(f"${name}", metadata)
             self.assertNotIn("TODO", metadata)
+
+    def test_parent_skill_orchestrates_exploration_and_presentation(self):
+        text = (SKILLS / "plan-china-trip" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("$explore-china-routes", text)
+        self.assertIn("$present-china-trip", text)
+        self.assertIn("Never enable Pro Max without an explicit user choice", text)
+
+    def test_exploration_tiers_share_high_baseline_capabilities(self):
+        text = (SKILLS / "explore-china-routes" / "SKILL.md").read_text(encoding="utf-8")
+        for capability in ("student fares", "accommodation", "luggage", "taxes", "refund"):
+            self.assertIn(capability, text)
+        self.assertIn("Pro Max", text)
+        self.assertIn("explicit", text)
+
+    def test_presentation_skill_keeps_image_generation_out_of_facts(self):
+        text = (SKILLS / "present-china-trip" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Visualize", text)
+        self.assertIn("itinerary.json", text)
+        self.assertIn("ImageGen must not", text)
 
 
 if __name__ == "__main__":

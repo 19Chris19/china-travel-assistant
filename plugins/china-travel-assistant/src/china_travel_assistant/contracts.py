@@ -20,6 +20,33 @@ class ProviderHealth(str, Enum):
     DEGRADED = "degraded"
 
 
+class ExplorationTier(str, Enum):
+    AUTO = "auto"
+    STANDARD = "standard"
+    PRO = "pro"
+    PRO_MAX = "pro_max"
+
+
+class RiskLevel(str, Enum):
+    STABLE = "stable"
+    MANAGED = "managed"
+    CHALLENGE = "challenge"
+
+
+class EvidenceStatus(str, Enum):
+    VERIFIED = "verified"
+    PARTIAL = "partial"
+    HYPOTHESIS = "hypothesis"
+
+
+class PresentationMode(str, Enum):
+    AUTO = "auto"
+    VISUALIZE = "visualize"
+    HTML = "html"
+    SVG = "svg"
+    MARKDOWN = "markdown"
+
+
 def _date(value: Any, *, field_name: str) -> date:
     if isinstance(value, date) and not isinstance(value, datetime):
         return value
@@ -105,6 +132,38 @@ def _optional_text(value: Any) -> str | None:
     return text or None
 
 
+def _boolean(value: Any, *, field_name: str, default: bool = False) -> bool:
+    if value is None or value == "":
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized in {"true", "yes", "1"}:
+            return True
+        if normalized in {"false", "no", "0"}:
+            return False
+    raise ValueError(f"{field_name} must be a boolean")
+
+
+def _optional_boolean(value: Any, *, field_name: str) -> bool | None:
+    if value is None or value == "":
+        return None
+    return _boolean(value, field_name=field_name)
+
+
+def _enum(value: Any, enum_type: type[Enum], *, field_name: str, default: Enum) -> Enum:
+    if value is None or value == "":
+        return default
+    if isinstance(value, enum_type):
+        return value
+    try:
+        return enum_type(str(value).strip().casefold())
+    except ValueError as exc:
+        allowed = ", ".join(item.value for item in enum_type)
+        raise ValueError(f"{field_name} must be one of: {allowed}") from exc
+
+
 def _sources(value: Any, provider: str) -> tuple[str, ...]:
     if value is None or value == "":
         return (provider,)
@@ -125,6 +184,12 @@ class TravelRequest:
     luggage: str | None = None
     time_preference: str | None = None
     fatigue_preference: str | None = None
+    exploration_tier: ExplorationTier = ExplorationTier.AUTO
+    risk_tolerance: RiskLevel | None = None
+    student_fare: bool = False
+    allow_overnight: bool | None = None
+    arrival_deadline: datetime | None = None
+    direct_only: bool = False
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "TravelRequest":
@@ -143,13 +208,201 @@ class TravelRequest:
             luggage=_optional_text(value.get("luggage")),
             time_preference=_optional_text(value.get("time_preference")),
             fatigue_preference=_optional_text(value.get("fatigue_preference")),
+            exploration_tier=_enum(
+                value.get("exploration_tier", value.get("tier")),
+                ExplorationTier,
+                field_name="exploration_tier",
+                default=ExplorationTier.AUTO,
+            ),
+            risk_tolerance=(
+                _enum(
+                    value.get("risk_tolerance"),
+                    RiskLevel,
+                    field_name="risk_tolerance",
+                    default=RiskLevel.MANAGED,
+                )
+                if value.get("risk_tolerance") not in (None, "")
+                else None
+            ),
+            student_fare=_boolean(value.get("student_fare"), field_name="student_fare"),
+            allow_overnight=_optional_boolean(value.get("allow_overnight"), field_name="allow_overnight"),
+            arrival_deadline=_datetime(value.get("arrival_deadline"), field_name="arrival_deadline"),
+            direct_only=_boolean(value.get("direct_only"), field_name="direct_only"),
         )
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
         payload["date_start"] = self.date_start.isoformat()
         payload["date_end"] = self.date_end.isoformat()
+        payload["exploration_tier"] = self.exploration_tier.value
+        payload["risk_tolerance"] = self.risk_tolerance.value if self.risk_tolerance else None
+        payload["arrival_deadline"] = self.arrival_deadline.isoformat() if self.arrival_deadline else None
         return payload
+
+
+@dataclass(frozen=True)
+class ExplorationPolicy:
+    tier: ExplorationTier
+    max_hypotheses: int
+    max_self_transfers: int
+    max_modes: int
+    hub_radius_km: int
+    date_flexibility_days: int
+    allow_overnight: bool
+    novelty_weight: float
+    risk_budget: RiskLevel
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["tier"] = self.tier.value
+        payload["risk_budget"] = self.risk_budget.value
+        return payload
+
+
+@dataclass(frozen=True)
+class RouteHypothesis:
+    hypothesis_id: str
+    template: str
+    origin: str
+    destination: str
+    hubs: tuple[str, ...] = field(default_factory=tuple)
+    modes: tuple[str, ...] = field(default_factory=tuple)
+    rationale: str | None = None
+    self_transfer: bool = False
+    overnight: bool = False
+    risk_level: RiskLevel = RiskLevel.STABLE
+    evidence_status: EvidenceStatus = EvidenceStatus.HYPOTHESIS
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["hubs"] = list(self.hubs)
+        payload["modes"] = list(self.modes)
+        payload["risk_level"] = self.risk_level.value
+        payload["evidence_status"] = self.evidence_status.value
+        return payload
+
+
+@dataclass(frozen=True)
+class ItineraryLeg:
+    leg_id: str
+    mode: str
+    origin: str
+    destination: str
+    provider: str | None = None
+    service_number: str | None = None
+    departure_at: datetime | None = None
+    arrival_at: datetime | None = None
+    total_price_cny: float | None = None
+    duration_minutes: int | None = None
+    buffer_minutes: int = 0
+    self_transfer: bool = False
+    booking_url: str | None = None
+    evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+    sources: tuple[str, ...] = field(default_factory=tuple)
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "ItineraryLeg":
+        provider = _optional_text(value.get("provider"))
+        raw_sources = value.get("sources")
+        sources = _sources(raw_sources, provider) if provider else tuple(raw_sources or ())
+        return cls(
+            leg_id=_required_text(value.get("leg_id"), field_name="leg_id"),
+            mode=_required_text(value.get("mode"), field_name="mode"),
+            origin=_required_text(value.get("origin"), field_name="origin"),
+            destination=_required_text(value.get("destination"), field_name="destination"),
+            provider=provider,
+            service_number=_optional_text(value.get("service_number")),
+            departure_at=_datetime(value.get("departure_at"), field_name="departure_at"),
+            arrival_at=_datetime(value.get("arrival_at"), field_name="arrival_at"),
+            total_price_cny=_money(value.get("total_price_cny"), field_name="total_price_cny"),
+            duration_minutes=_optional_integer(value.get("duration_minutes"), field_name="duration_minutes"),
+            buffer_minutes=_integer(value.get("buffer_minutes", 0), field_name="buffer_minutes"),
+            self_transfer=_boolean(value.get("self_transfer"), field_name="self_transfer"),
+            booking_url=_optional_text(value.get("booking_url")),
+            evidence_status=_enum(
+                value.get("evidence_status"),
+                EvidenceStatus,
+                field_name="evidence_status",
+                default=EvidenceStatus.PARTIAL,
+            ),
+            sources=sources,
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["departure_at"] = self.departure_at.isoformat() if self.departure_at else None
+        payload["arrival_at"] = self.arrival_at.isoformat() if self.arrival_at else None
+        payload["evidence_status"] = self.evidence_status.value
+        payload["sources"] = list(self.sources)
+        return payload
+
+
+@dataclass(frozen=True)
+class ItineraryCandidate:
+    itinerary_id: str
+    title: str
+    tier: ExplorationTier
+    legs: tuple[ItineraryLeg, ...]
+    is_baseline: bool = False
+    total_price_cny: float | None = None
+    total_duration_minutes: int | None = None
+    transfer_count: int | None = None
+    risk_level: RiskLevel = RiskLevel.STABLE
+    evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+    novelty_reason: str | None = None
+    benefit_summary: str | None = None
+    burden_summary: str | None = None
+    delay_fallback: str | None = None
+    unknown_fields: tuple[str, ...] = field(default_factory=tuple)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "itinerary_id": self.itinerary_id,
+            "title": self.title,
+            "tier": self.tier.value,
+            "legs": [leg.to_dict() for leg in self.legs],
+            "is_baseline": self.is_baseline,
+            "total_price_cny": self.total_price_cny,
+            "total_duration_minutes": self.total_duration_minutes,
+            "transfer_count": self.transfer_count,
+            "risk_level": self.risk_level.value,
+            "evidence_status": self.evidence_status.value,
+            "novelty_reason": self.novelty_reason,
+            "benefit_summary": self.benefit_summary,
+            "burden_summary": self.burden_summary,
+            "delay_fallback": self.delay_fallback,
+            "unknown_fields": list(self.unknown_fields),
+        }
+
+
+@dataclass(frozen=True)
+class PresentationCapabilities:
+    visualize: bool = False
+    html: bool = True
+    svg: bool = True
+    markdown: bool = True
+    image_generation: bool = False
+
+    def choose(self, requested: PresentationMode = PresentationMode.AUTO) -> PresentationMode:
+        if requested is not PresentationMode.AUTO:
+            if requested is PresentationMode.VISUALIZE and not self.visualize:
+                raise ValueError("visualize presentation is unavailable")
+            if requested is PresentationMode.HTML and not self.html:
+                raise ValueError("html presentation is unavailable")
+            if requested is PresentationMode.SVG and not self.svg:
+                raise ValueError("svg presentation is unavailable")
+            if requested is PresentationMode.MARKDOWN and not self.markdown:
+                raise ValueError("markdown presentation is unavailable")
+            return requested
+        if self.visualize:
+            return PresentationMode.VISUALIZE
+        if self.html:
+            return PresentationMode.HTML
+        if self.svg:
+            return PresentationMode.SVG
+        if self.markdown:
+            return PresentationMode.MARKDOWN
+        raise ValueError("no supported presentation mode is available")
 
 
 @dataclass(frozen=True)

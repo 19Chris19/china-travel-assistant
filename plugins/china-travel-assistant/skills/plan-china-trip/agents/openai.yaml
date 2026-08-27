@@ -1,4 +1,4 @@
 interface:
-  display_name: "中国出行总规划"
-  short_description: "整合中国境内机票、火车、酒店、城区接驳、预算与备选方案"
-  default_prompt: "Use $plan-china-trip to handle this China travel task with current evidence and explicit price caveats."
+  display_name: "天枢 TravelOS 总规划 Skill"
+  short_description: "由 Agent 编排八个 Skills，生成可核验的中国出行与创新组合路线"
+  default_prompt: "Use $plan-china-trip to orchestrate the China Travel Assistant Agent Skills, default to Auto/Pro exploration, keep a stable baseline, and present the result with exact evidence-backed facts."
