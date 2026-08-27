@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -8,6 +9,46 @@ from china_travel_assistant.cli import main
 
 
 class CliTests(unittest.TestCase):
+    def test_plan_emits_resolved_tier_search_plan_and_itineraries(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            result = main(
+                [
+                    "plan",
+                    json.dumps(
+                        {
+                            "request": {
+                                "origin": "沈阳",
+                                "destination": "苏州",
+                                "date_start": "2026-08-30",
+                                "student_fare": True,
+                            },
+                            "legs": [
+                                {
+                                    "leg_id": "g1",
+                                    "mode": "train",
+                                    "origin": "沈阳",
+                                    "destination": "苏州",
+                                    "provider": "12306",
+                                    "duration_minutes": 600,
+                                    "total_price_cny": 730,
+                                }
+                            ],
+                        }
+                    ),
+                    "--presentation",
+                    "html",
+                ]
+            )
+
+        self.assertEqual(result, 0, stderr.getvalue())
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["resolved_tier"], "pro")
+        self.assertEqual(payload["presentation_requested"], "html")
+        self.assertTrue(payload["search_plan"])
+        self.assertTrue(payload["itineraries"][0]["is_baseline"])
+
     def test_normalize_request_rejects_non_object_json(self):
         stdout = io.StringIO()
         stderr = io.StringIO()
