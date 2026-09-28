@@ -77,11 +77,45 @@ class DoctorTests(unittest.TestCase):
         ):
             result = Doctor(live=False).run()
 
-        for provider in ("amap", "flyai", "variflight", "12306", "ego-browser"):
+        for provider in ("amap", "flyai", "variflight", "12306", "qweather", "ego-browser", "visualize"):
             self.assertIn("version", result[provider], provider)
+            self.assertIn("checked_at", result[provider], provider)
+            self.assertIn("capabilities", result[provider], provider)
         self.assertEqual(result["amap"]["version"], "web-service-v3-v5")
         self.assertEqual(result["variflight"]["version"], "1.0.3")
         self.assertEqual(result["ego-browser"]["skill_version"], "1.2.3")
+        self.assertEqual(result["qweather"]["status"], "not_required")
+        self.assertEqual(result["visualize"]["status"], "unknown")
+
+    def test_qweather_configuration_is_checked_without_a_network_probe_by_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            key = Path(directory) / "private.pem"
+            key.write_text("fixture", encoding="utf-8")
+            key.chmod(0o600)
+            credentials = Path(directory) / "credentials.env"
+            credentials.write_text(
+                "\n".join(
+                    (
+                        "QWEATHER_API_HOST=https://example.qweatherapi.com",
+                        "QWEATHER_KEY_ID=credential-id",
+                        "QWEATHER_DEVELOPER_ID=Q123456789",
+                        "QWEATHER_PROJECT_ID=project-id",
+                        f"QWEATHER_PRIVATE_KEY_PATH={key}",
+                    )
+                ),
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = Doctor(
+                    live=False,
+                    credentials_path=credentials,
+                    probes={"qweather": lambda _: self.fail("probe called")},
+                ).run()
+
+        self.assertEqual(result["qweather"]["status"], "ready")
+        self.assertEqual(result["qweather"]["check"], "configuration_only")
+        self.assertNotIn("credential-id", output.getvalue())
 
     def test_ego_skill_version_is_read_from_installed_frontmatter(self):
         with tempfile.TemporaryDirectory() as directory:

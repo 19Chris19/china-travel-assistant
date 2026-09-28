@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+from datetime import datetime
 from pathlib import Path
 from typing import Callable, Mapping
 from urllib.error import HTTPError
@@ -12,6 +13,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 from .contracts import ProviderHealth
+from .qweather import QWEATHER_ENV_KEYS, QWeatherConfigurationError, QWeatherCredentials, probe_qweather
 
 
 RAIL_REVISION = "1b6ee94ff801cbfe0c1e8c8bb95195466b08b6dd"
@@ -95,6 +97,7 @@ def load_credentials(path: Path | None = None) -> dict[str, str]:
         "FLYAI_API_KEY",
         "VARIFLIGHT_API_KEY",
         "VIGOLIVE_API_KEY",
+        *QWEATHER_ENV_KEYS,
     ):
         if os.environ.get(key):
             values[key] = os.environ[key]
@@ -147,13 +150,17 @@ class Doctor:
         *,
         live: bool = False,
         credentials_path: Path | None = None,
-        probes: Mapping[str, Callable[[str | None], object]] | None = None,
+        probes: Mapping[str, Callable[[object], object]] | None = None,
     ) -> None:
         self.live = live
         self.credentials_path = credentials_path
-        self.probes = dict({"amap": probe_amap, "variflight": probe_variflight} if probes is None else probes)
+        self.probes = dict(
+            {"amap": probe_amap, "variflight": probe_variflight, "qweather": probe_qweather}
+            if probes is None
+            else probes
+        )
 
-    def run(self) -> dict[str, dict[str, str]]:
+    def run(self) -> dict[str, dict[str, object]]:
         credentials = load_credentials(self.credentials_path)
         result = {
             "amap": self._provider(
@@ -161,44 +168,53 @@ class Doctor:
                 credentials.get("AMAP_WEBSERVICE_KEY"),
                 required=True,
                 version="web-service-v3-v5",
+                capabilities=("poi", "nearby", "transfer", "gateway-discovery"),
             ),
-            "flyai": self._binary_provider("flyai", "flyai", required=True),
+            "flyai": self._binary_provider(
+                "flyai", "flyai", required=True, capabilities=("flight", "hotel", "attractions")
+            ),
             "variflight": self._provider(
-                "variflight", credentials.get("VARIFLIGHT_API_KEY"), required=False, version="1.0.3"
+                "variflight",
+                credentials.get("VARIFLIGHT_API_KEY"),
+                required=False,
+                version="1.0.3",
+                capabilities=("flight-status", "punctuality"),
+                absent_status=ProviderHealth.NOT_REQUIRED,
             ),
             "12306": self._binary_provider(
-                "12306", "uvx", required=True, unverified=True, version=f"git:{RAIL_REVISION}"
+                "12306",
+                "uvx",
+                required=True,
+                unverified=True,
+                version=f"git:{RAIL_REVISION}",
+                capabilities=("train", "availability"),
             ),
+            "qweather": self._qweather_provider(credentials),
             "ego-browser": self._ego_provider(),
+            "visualize": self._visualize_provider(),
         }
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return result
 
     def _provider(
-        self, name: str, credential: str | None, *, required: bool, version: str
-    ) -> dict[str, str]:
+        self,
+        name: str,
+        credential: object | None,
+        *,
+        required: bool,
+        version: str,
+        capabilities: tuple[str, ...] = (),
+        absent_status: ProviderHealth = ProviderHealth.MISSING,
+    ) -> dict[str, object]:
         if not credential:
-            return {
-                "status": ProviderHealth.MISSING.value,
-                "check": "configuration_only",
-                "required": str(required).lower(),
-                "version": version,
-            }
+            return self._health_payload(absent_status, "configuration_only", required, version, capabilities)
         if not self.live:
-            return {
-                "status": ProviderHealth.READY.value,
-                "check": "configuration_only",
-                "required": str(required).lower(),
-                "version": version,
-            }
+            return self._health_payload(ProviderHealth.READY, "configuration_only", required, version, capabilities)
         probe = self.probes.get(name)
         if probe is None:
-            return {
-                "status": ProviderHealth.DEGRADED.value,
-                "check": "live_probe_unavailable",
-                "required": str(required).lower(),
-                "version": version,
-            }
+            return self._health_payload(
+                ProviderHealth.DEGRADED, "live_probe_unavailable", required, version, capabilities
+            )
         try:
             probe(credential)
         except ProviderProbeError as exc:
@@ -211,12 +227,41 @@ class Doctor:
             state = ProviderHealth.DEGRADED
         else:
             state = ProviderHealth.READY
+        return self._health_payload(state, "live", required, version, capabilities)
+
+    @staticmethod
+    def _health_payload(
+        status: ProviderHealth,
+        check: str,
+        required: bool,
+        version: str,
+        capabilities: tuple[str, ...],
+    ) -> dict[str, object]:
         return {
-            "status": state.value,
-            "check": "live",
+            "status": status.value,
+            "check": check,
             "required": str(required).lower(),
             "version": version,
+            "capabilities": list(capabilities),
+            "checked_at": datetime.now().astimezone().isoformat(),
         }
+
+    def _qweather_provider(self, credentials: Mapping[str, str]) -> dict[str, object]:
+        capabilities = ("weather", "alerts", "visibility", "outdoor-risk")
+        try:
+            configured = QWeatherCredentials.from_mapping(credentials)
+        except QWeatherConfigurationError as exc:
+            state = ProviderHealth.NOT_REQUIRED if "missing QWeather settings" in str(exc) else ProviderHealth.DEGRADED
+            return self._health_payload(state, "configuration_only", False, "jwt-ed25519", capabilities)
+        status = configured.status()
+        if status == "missing_private_key":
+            return self._health_payload(ProviderHealth.MISSING, "private_key_presence", False, "jwt-ed25519", capabilities)
+        if status != "configured":
+            return self._health_payload(ProviderHealth.DEGRADED, status, False, "jwt-ed25519", capabilities)
+        return self._provider(
+            "qweather", configured, required=False, version="jwt-ed25519", capabilities=capabilities,
+            absent_status=ProviderHealth.NOT_REQUIRED,
+        )
 
     @staticmethod
     def _binary_provider(
@@ -226,7 +271,8 @@ class Doctor:
         required: bool,
         unverified: bool = False,
         version: str | None = None,
-    ) -> dict[str, str]:
+        capabilities: tuple[str, ...] = (),
+    ) -> dict[str, object]:
         path = shutil.which(binary)
         if not path:
             status = ProviderHealth.MISSING
@@ -240,19 +286,26 @@ class Doctor:
             status = ProviderHealth.READY
             check = "binary_presence"
             detected_version = version or _binary_version(binary, path)
-        return {
-            "status": status.value,
-            "check": check,
-            "required": str(required).lower(),
-            "version": detected_version,
-        }
+        return Doctor._health_payload(status, check, required, detected_version, capabilities)
 
     @staticmethod
-    def _ego_provider() -> dict[str, str]:
-        result = Doctor._binary_provider("ego-browser", "ego-browser", required=False)
+    def _ego_provider() -> dict[str, object]:
+        result = Doctor._binary_provider(
+            "ego-browser", "ego-browser", required=False, capabilities=("web-verification", "login-handoff")
+        )
         skill_version = _ego_skill_version()
         result["skill_version"] = skill_version
         if result["status"] == ProviderHealth.READY.value and skill_version == "not-installed":
             result["status"] = ProviderHealth.DEGRADED.value
             result["check"] = "binary_present_skill_missing"
         return result
+
+    @staticmethod
+    def _visualize_provider() -> dict[str, object]:
+        return Doctor._health_payload(
+            ProviderHealth.UNKNOWN,
+            "host_negotiated_at_presentation",
+            False,
+            "host-provided",
+            ("interactive-itinerary",),
+        )

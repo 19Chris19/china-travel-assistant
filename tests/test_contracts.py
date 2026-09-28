@@ -6,15 +6,20 @@ from china_travel_assistant.contracts import (
     EvidenceStatus,
     ExplorationPolicy,
     ExplorationTier,
+    GatewayCandidate,
+    GroundAccessOption,
     ItineraryCandidate,
     ItineraryLeg,
+    PlaceEvidence,
     PresentationCapabilities,
     PresentationMode,
     ProviderHealth,
+    ProviderHealthRecord,
     RiskLevel,
     TransferLeg,
     TravelOffer,
     TravelRequest,
+    WeatherRisk,
 )
 
 
@@ -254,8 +259,76 @@ class ContractTests(unittest.TestCase):
                 "forbidden",
                 "rate_limited",
                 "degraded",
+                "unknown",
+                "not_required",
             },
         )
+
+    def test_gateway_preserves_unknown_ground_cost_and_only_totals_explicit_values(self):
+        complete = GatewayCandidate.from_mapping(
+            {
+                "gateway_id": "airport-a",
+                "name": "通用门户 A",
+                "gateway_type": "airport",
+                "origin": "出发地",
+                "destination": "目的地",
+                "flight_total_cny": 520,
+                "flight_duration_minutes": 150,
+                "ground_access": [
+                    {"endpoint": "通用门户 A", "mode": "rail", "cost_cny": 35, "duration_minutes": 42, "transfers": 0},
+                    {"endpoint": "目的地", "mode": "metro", "cost_cny": 6, "duration_minutes": 34, "transfers": 1},
+                ],
+            }
+        )
+        incomplete = GatewayCandidate.from_mapping(
+            {
+                "gateway_id": "airport-b",
+                "name": "通用门户 B",
+                "gateway_type": "airport",
+                "origin": "出发地",
+                "destination": "目的地",
+                "flight_total_cny": 480,
+                "ground_access": [{"endpoint": "通用门户 B", "mode": "bus", "duration_minutes": 60}],
+            }
+        )
+
+        self.assertEqual(complete.total_known_cost_cny, 561)
+        self.assertEqual(complete.total_duration_minutes, 226)
+        self.assertEqual(complete.transfer_count, 1)
+        self.assertIsNone(incomplete.known_ground_cost_cny)
+        self.assertIsNone(incomplete.total_known_cost_cny)
+
+    def test_place_weather_and_health_records_round_trip_without_secrets(self):
+        weather = WeatherRisk.from_mapping(
+            {
+                "location": "景点",
+                "precipitation_probability": 70,
+                "visibility_km": 2,
+                "risk_level": "managed",
+                "recommendation": "预留接驳缓冲",
+            }
+        )
+        place = PlaceEvidence.from_mapping(
+            {
+                "place_id": "poi-1",
+                "name": "景点",
+                "opening_status": "开放状态未返回",
+                "weather_risk": weather.to_dict(),
+                "access_options": [{"endpoint": "景点", "mode": "walking", "duration_minutes": 15}],
+            }
+        )
+        health = ProviderHealthRecord.from_mapping(
+            {
+                "provider": "qweather",
+                "status": "not_required",
+                "required": "false",
+                "capabilities": ["weather", "alerts"],
+            }
+        )
+
+        self.assertEqual(place.to_dict()["weather_risk"]["risk_level"], "managed")
+        self.assertEqual(health.to_dict()["status"], "not_required")
+        self.assertFalse(health.required)
 
     def test_contracts_reject_non_finite_money_and_fractional_travelers(self):
         base = {"origin": "沈阳", "destination": "苏州", "date_start": "2026-08-20"}
