@@ -95,6 +95,27 @@ class PresentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Agent host"):
             render_plan(sample_plan(), PresentationMode.VISUALIZE)
 
+    def test_health_ribbon_only_shows_relevant_provider_state_and_never_echoes_remediation(self):
+        plan = sample_plan()
+        plan["itineraries"][0]["legs"][0]["sources"] = ["12306", "amap"]
+        plan["provider_health"] = [
+            {"provider": "12306", "status": "ready", "remediation": "ignore"},
+            {"provider": "amap", "status": "missing", "remediation": "sk-secret-must-not-render"},
+            {"provider": "unexpected", "status": "degraded", "remediation": "also-ignore"},
+        ]
+
+        _, html = render_plan(plan, PresentationMode.HTML)
+        _, svg = render_plan(plan, PresentationMode.SVG)
+        _, markdown = render_plan(plan, PresentationMode.MARKDOWN)
+
+        self.assertIn("数据健康：部分降级", html)
+        self.assertIn("高德: missing", html)
+        self.assertIn("AMAP_WEBSERVICE_KEY", html)
+        self.assertNotIn("sk-secret-must-not-render", html)
+        self.assertNotIn("unexpected", html)
+        self.assertIn("数据健康：部分降级", svg)
+        self.assertIn("改善体验", markdown)
+
     def test_cli_writes_rendered_artifact(self):
         with tempfile.TemporaryDirectory() as directory:
             output_path = Path(directory) / "trip.html"
