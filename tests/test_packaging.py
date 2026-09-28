@@ -96,11 +96,12 @@ class PackagingTests(unittest.TestCase):
         script = (ROOT / "scripts" / "install-local.sh").read_text(encoding="utf-8")
 
         self.assertIn("python3 -m pipx", script)
-        self.assertIn('npm install -g --prefix "$HOME/.local"', script)
-        self.assertIn("@fly-ai/flyai-cli@1.0.16", script)
-        self.assertIn("command -v uvx", script)
-        self.assertIn("command -v ego-browser", script)
-        self.assertIn("1.2.3", script)
+        self.assertIn("Python 3.10+", script)
+        self.assertNotIn("command -v uvx", script)
+        self.assertNotIn("command -v ego-browser", script)
+        optional = (ROOT / "scripts" / "install-optional.sh").read_text(encoding="utf-8")
+        self.assertIn('npm install -g --prefix "$HOME/.local"', optional)
+        self.assertIn("@fly-ai/flyai-cli@1.0.16", optional)
 
     def test_ci_uses_live_github_actions_expressions(self):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -167,9 +168,9 @@ class PackagingTests(unittest.TestCase):
                 text=True,
                 env=base_env,
             )
-            variflight = subprocess.run(
+            no_profile = subprocess.run(
                 [str(launcher), "variflight", "env"],
-                check=True,
+                check=False,
                 capture_output=True,
                 text=True,
                 env=base_env,
@@ -184,9 +185,9 @@ class PackagingTests(unittest.TestCase):
 
         for secret in ("amap-test", "fly-test", "vari-test"):
             self.assertNotIn(secret, rail.stdout)
-        self.assertNotIn("amap-test", variflight.stdout)
-        self.assertNotIn("fly-test", variflight.stdout)
-        self.assertIn("VARIFLIGHT_API_KEY=vari-test", variflight.stdout)
+        self.assertNotIn("amap-test", no_profile.stdout)
+        self.assertNotEqual(no_profile.returncode, 0)
+        self.assertNotIn("vari-test", no_profile.stdout + no_profile.stderr)
         self.assertIn("VARIFLIGHT_API_KEY=env-test", environment_override.stdout)
         self.assertNotIn("VARIFLIGHT_API_KEY=vari-test", environment_override.stdout)
 

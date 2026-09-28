@@ -9,6 +9,7 @@ import sys
 from dataclasses import replace
 
 from .amap import AmapClient
+from .credential_store import profile_status, reenter_with_profile, run_with_profile
 from .contracts import (
     ExplorationTier,
     GatewayCandidate,
@@ -19,7 +20,7 @@ from .contracts import (
     TravelOffer,
     TravelRequest,
 )
-from .doctor import Doctor, load_credentials
+from .doctor import Doctor, ProviderProbeError, probe_amap, probe_variflight
 from .offers import deduplicate_offers, rank_offers
 from .omniroute import plan_trip
 from .presentation import render_plan
@@ -76,7 +77,7 @@ def _parser() -> argparse.ArgumentParser:
     flyai = subparsers.add_parser("flyai", help="run the pinned FlyAI CLI with unified credentials")
     flyai.add_argument("args", nargs=argparse.REMAINDER)
 
-    plan = subparsers.add_parser("plan", help="build an OmniRoute search plan and compose supplied itinerary legs")
+    plan = subparsers.add_parser("plan", help="build a route exploration plan and compose supplied itinerary legs")
     plan.add_argument("json", nargs="?")
     plan.add_argument("--tier", choices=tuple(item.value for item in ExplorationTier))
     plan.add_argument("--presentation", choices=tuple(item.value for item in PresentationMode), default="auto")
@@ -90,6 +91,8 @@ def _parser() -> argparse.ArgumentParser:
         dest="presentation_format",
     )
     render.add_argument("--output")
+    probe = subparsers.add_parser("_probe-provider", help=argparse.SUPPRESS)
+    probe.add_argument("provider", choices=("amap", "variflight"))
     return parser
 
 
@@ -123,12 +126,20 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps([item.__dict__ for item in plan], ensure_ascii=False, default=str))
         elif args.command == "amap-search":
-            credentials = load_credentials()
-            client = AmapClient(api_key=credentials.get("AMAP_WEBSERVICE_KEY"))
+            if not os.environ.get("AMAP_WEBSERVICE_KEY"):
+                return reenter_with_profile("amap", ["amap-search", args.keywords, "--city", args.city])
+            client = AmapClient(api_key=os.environ["AMAP_WEBSERVICE_KEY"])
             print(json.dumps(client.text_search(args.keywords, city=args.city), ensure_ascii=False))
         elif args.command == "amap-route":
-            credentials = load_credentials()
-            result = AmapClient(api_key=credentials.get("AMAP_WEBSERVICE_KEY")).route(
+            if not os.environ.get("AMAP_WEBSERVICE_KEY"):
+                command = ["amap-route", args.mode, "--origin", ",".join(map(str, args.origin)),
+                           "--destination", ",".join(map(str, args.destination))]
+                if args.city:
+                    command.extend(("--city", args.city))
+                if args.destination_city:
+                    command.extend(("--destination-city", args.destination_city))
+                return reenter_with_profile("amap", command)
+            result = AmapClient(api_key=os.environ["AMAP_WEBSERVICE_KEY"]).route(
                 args.origin,
                 args.destination,
                 mode=args.mode,
@@ -156,10 +167,20 @@ def main(argv: list[str] | None = None) -> int:
                 "VIGOLIVE_API_KEY",
             ):
                 environment.pop(key, None)
-            flyai_key = load_credentials().get("FLYAI_API_KEY")
+            flyai_key = os.environ.get("FLYAI_API_KEY")
             if flyai_key:
                 environment["FLYAI_API_KEY"] = flyai_key
+            elif profile_status("flyai") == "ready":
+                return run_with_profile("flyai", ["flyai", *args.args])
             return subprocess.run(["flyai", *args.args], env=environment, check=False).returncode
+        elif args.command == "_probe-provider":
+            try:
+                if args.provider == "amap":
+                    probe_amap(os.environ.get("AMAP_WEBSERVICE_KEY"))
+                else:
+                    probe_variflight(os.environ.get("VARIFLIGHT_API_KEY"))
+            except ProviderProbeError as exc:
+                return {"expired": 3, "forbidden": 4, "rate_limited": 5}.get(exc.health.value, 2)
         elif args.command == "plan":
             payload = _read_json(args.json)
             if not isinstance(payload, dict):

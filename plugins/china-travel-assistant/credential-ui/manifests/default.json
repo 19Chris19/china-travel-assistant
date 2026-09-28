@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "china-travel-assistant",
+  "label": "高德 Web Service Key",
+  "credential": "china-travel-assistant/amap/default",
+  "ui": {"title": "连接高德地图", "placeholder": "粘贴高德 Web Service Key"}
+}

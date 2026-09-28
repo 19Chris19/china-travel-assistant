@@ -2,6 +2,8 @@
 
 This project contains original orchestration code and Skills under the MIT License. It does not relicense third-party services, data, trademarks, or content.
 
+The local credential configuration page at `plugins/china-travel-assistant/credential-ui/` is adapted from the MIT-licensed `oil-skill-creator/assets/credential-ui` component by oil-oil. This project adds provider-specific manifests and integrates its profile runner with the travel CLI and MCP launchers. The bundled component is not represented as an original implementation.
+
 ## Real GitHub Forks
 
 The following repositories were forked under the GitHub account 19Chris19. Their upstream notices and licenses remain authoritative inside each fork.

@@ -120,10 +120,7 @@ class CliTests(unittest.TestCase):
         output = io.StringIO()
         with (
             patch("china_travel_assistant.cli.AmapClient") as client,
-            patch(
-                "china_travel_assistant.cli.load_credentials",
-                return_value={"AMAP_WEBSERVICE_KEY": "file-key"},
-            ),
+            patch.dict(os.environ, {"AMAP_WEBSERVICE_KEY": "file-key"}),
             redirect_stdout(output),
         ):
             client.return_value.route.return_value = [{"mode": "transit"}]
@@ -156,13 +153,6 @@ class CliTests(unittest.TestCase):
     def test_flyai_wrapper_injects_unified_credentials(self):
         completed = type("Completed", (), {"returncode": 0})()
         with (
-            patch(
-                "china_travel_assistant.cli.load_credentials",
-                return_value={
-                    "FLYAI_API_KEY": "file-key",
-                    "AMAP_WEBSERVICE_KEY": "no-amap",
-                },
-            ),
             patch("china_travel_assistant.cli.shutil.which", return_value="/usr/bin/flyai"),
             patch("china_travel_assistant.cli.subprocess.run", return_value=completed) as run,
             patch.dict(
@@ -172,6 +162,7 @@ class CliTests(unittest.TestCase):
                     "AMAP_WEBSERVICE_KEY": "inherited-amap",
                     "VARIFLIGHT_API_KEY": "inherited-vari",
                     "VIGOLIVE_API_KEY": "inherited-vigo",
+                    "FLYAI_API_KEY": "file-key",
                 },
                 clear=True,
             ),

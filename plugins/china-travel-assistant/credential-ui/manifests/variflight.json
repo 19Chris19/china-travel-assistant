@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "china-travel-assistant",
+  "label": "飞常准 API Key",
+  "credential": "china-travel-assistant/variflight/default",
+  "ui": {"title": "连接飞常准", "placeholder": "粘贴飞常准 API Key"}
+}

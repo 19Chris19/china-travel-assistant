@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from .credential_store import profile_status, reenter_with_profile
 from .contracts import ProviderHealth
 from .qweather import QWEATHER_ENV_KEYS, QWeatherConfigurationError, QWeatherCredentials, probe_qweather
 
@@ -73,11 +74,13 @@ def probe_variflight(api_key: str | None) -> None:
 
 def _default_credentials_path() -> Path:
     config_root = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
-    return config_root / "china-travel-assistant" / "credentials.env"
+    return Path(os.environ.get("CHINA_TRAVEL_SETTINGS_FILE", config_root / "china-travel-assistant" / "settings.env"))
 
 
 def load_credentials(path: Path | None = None) -> dict[str, str]:
     path = path or _default_credentials_path()
+    if path.name == "credentials.env":
+        raise ValueError("legacy plaintext credentials are not accepted")
     values: dict[str, str] = {}
     if path.exists():
         for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -89,14 +92,14 @@ def load_credentials(path: Path | None = None) -> dict[str, str]:
             key, separator, value = line.partition("=")
             if not separator or not key.strip():
                 continue
-            values[key.strip()] = value.strip().strip("'\"")
+            if key.strip() in QWEATHER_ENV_KEYS:
+                values[key.strip()] = value.strip().strip("'\"")
     for key in (
         "AMAP_WEBSERVICE_KEY",
         "AMAP_JSAPI_KEY",
         "AMAP_SECURITY_CODE",
         "FLYAI_API_KEY",
         "VARIFLIGHT_API_KEY",
-        "VIGOLIVE_API_KEY",
         *QWEATHER_ENV_KEYS,
     ):
         if os.environ.get(key):
@@ -170,9 +173,7 @@ class Doctor:
                 version="web-service-v3-v5",
                 capabilities=("poi", "nearby", "transfer", "gateway-discovery"),
             ),
-            "flyai": self._binary_provider(
-                "flyai", "flyai", required=True, capabilities=("flight", "hotel", "attractions")
-            ),
+            "flyai": self._flyai_provider(),
             "variflight": self._provider(
                 "variflight",
                 credentials.get("VARIFLIGHT_API_KEY"),
@@ -207,7 +208,20 @@ class Doctor:
         absent_status: ProviderHealth = ProviderHealth.MISSING,
     ) -> dict[str, object]:
         if not credential:
-            return self._health_payload(absent_status, "configuration_only", required, version, capabilities)
+            profile_state = profile_status(name)
+            if profile_state == "missing":
+                return self._health_payload(absent_status, "system_store_status", required, version, capabilities)
+            if profile_state == "degraded":
+                return self._health_payload(ProviderHealth.DEGRADED, "system_store_status", required, version, capabilities)
+            if self.live:
+                try:
+                    code = reenter_with_profile(name, ["_probe-provider", name])
+                except (OSError, RuntimeError):
+                    code = 1
+                states = {0: ProviderHealth.READY, 3: ProviderHealth.EXPIRED, 4: ProviderHealth.FORBIDDEN,
+                          5: ProviderHealth.RATE_LIMITED}
+                return self._health_payload(states.get(code, ProviderHealth.DEGRADED), "live", required, version, capabilities)
+            return self._health_payload(ProviderHealth.READY, "system_store_status", required, version, capabilities)
         if not self.live:
             return self._health_payload(ProviderHealth.READY, "configuration_only", required, version, capabilities)
         probe = self.probes.get(name)
@@ -287,6 +301,24 @@ class Doctor:
             check = "binary_presence"
             detected_version = version or _binary_version(binary, path)
         return Doctor._health_payload(status, check, required, detected_version, capabilities)
+
+    @staticmethod
+    def _flyai_provider() -> dict[str, object]:
+        result = Doctor._binary_provider(
+            "flyai", "flyai", required=False, capabilities=("flight", "hotel", "attractions")
+        )
+        if result["status"] != ProviderHealth.READY.value:
+            return result
+        state = profile_status("flyai")
+        if state == "missing":
+            result["status"] = ProviderHealth.DEGRADED.value
+            result["check"] = "binary_present_credential_missing_trial_possible"
+        elif state == "degraded":
+            result["status"] = ProviderHealth.DEGRADED.value
+            result["check"] = "credential_store_unavailable"
+        else:
+            result["check"] = "binary_and_credential_configuration"
+        return result
 
     @staticmethod
     def _ego_provider() -> dict[str, object]:
