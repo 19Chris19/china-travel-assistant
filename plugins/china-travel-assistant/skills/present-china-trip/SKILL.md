@@ -24,9 +24,10 @@ Visualize may be unavailable in older Codex versions or unsupported clients. Rec
 - Escape untrusted labels and links in HTML and SVG.
 - Do not load remote scripts, fonts, or analytics in local artifacts.
 - ImageGen must not write or redraw itinerary facts. A future decorative background may be generated separately, but deterministic HTML or SVG must place all critical text.
+- Show a narrow data-health ribbon sourced from `ProviderHealthRecord`. Only show providers relevant to this itinerary; display readiness separately from ticket, route, weather, and opening evidence. Never render a key, token, private-key path, raw error body, or sensitive request URL.
 
 ## Visual Structure
 
-Show the resolved tier, constraints, stable baseline, recommendation, alternatives, leg nodes, transfer buffers, known total, unknown costs, evidence status, burden, delay fallback, and copyable booking links. Use color and icons only as redundant cues; every status also needs a text label.
+Show the resolved tier, constraints, stable baseline, recommendation, alternatives, leg nodes, transfer buffers, known total, unknown costs, evidence status, burden, delay fallback, generic gateway or place facts when present, the data-health ribbon, and copyable booking links. Use color and icons only as redundant cues; every status also needs a text label.
 
 Never submit bookings, personal identity, payment, refund, or change requests from the presentation layer.

@@ -5,12 +5,12 @@
 <h1 align="center">天枢 TravelOS · 中国出行助手 Agent Skill</h1>
 
 <p align="center">
-  面向 Agent 的中国境内出行规划 Skill Plugin：八个可独立调用的 Skills，用对话组合机票、12306 火车票、酒店、高德接驳与传统平台之外的多式联运路线。
+  面向 Agent 的中国境内出行规划 Skill Plugin：八个可独立调用的 Skills，用对话组合机票、12306 火车票、酒店、高德接驳、通用门户排序、地点事实与传统平台之外的多式联运路线。
 </p>
 
 <p align="center">
   <a href="https://github.com/19Chris19/china-travel-assistant/actions/workflows/ci.yml">CI</a> ·
-  <a href="https://github.com/19Chris19/china-travel-assistant/releases/tag/v0.2.0">Release v0.2.0</a> ·
+  <a href="https://github.com/19Chris19/china-travel-assistant/releases/tag/v0.3.0">Release v0.3.0</a> ·
   <a href="./LICENSE">MIT License</a> ·
   <a href="https://github.com/19Chris19/china-travel-assistant/issues">Issues</a>
 </p>
@@ -51,7 +51,7 @@ travel-assistant doctor
 默认用 Auto/Pro 主动探索飞铁联运，把机场接驳、学生票和含税总价一起算清楚。
 ```
 
-默认 `doctor` 只检查本地配置、版本和运行时，不发送付费 API 请求；明确同意后才运行 `travel-assistant doctor --live`。
+默认 `doctor` 只检查本地配置、版本、私钥权限和运行时，不发送付费 API 请求；明确同意后才运行 `travel-assistant doctor --live`。它会安全返回 `ready`、`missing`、`expired`、`forbidden`、`rate_limited`、`degraded`、`unknown` 或 `not_required`，绝不回显凭据。
 
 <h2 id="routing">能力路由</h2>
 
@@ -76,7 +76,7 @@ travel-assistant doctor
 | `$explore-china-routes` | OmniRoute 确定性组合、剪枝、风险和基准收益解释 | 已归一化的供应商行程腿 |
 | `$present-china-trip` | Visualize 优先，HTML/SVG/Markdown 精确回退 | 同一份 `itinerary.json` |
 
-租房搜索不在 v0.2 运行时中，相关能力计划在 v2 以原创适配器重新加入。
+租房搜索不在 v0.3 运行时中，相关能力计划在 v2 以原创适配器重新加入。
 
 ### Standard / Pro / Pro Max
 
@@ -99,17 +99,24 @@ travel-assistant doctor
 ```text
 自然语言需求
     -> plan-china-trip
-    -> FlyAI / 12306 / 高德
+    -> 高德发现通用门户 / FlyAI / 12306
     -> 飞常准按需增强
+    -> QWeather 按需评估户外与接驳风险
     -> Ego Browser 仅核验登录价或页面证据
     -> explore-china-routes 组合与校验 OmniRoute 候选
     -> present-china-trip 选择 Visualize 或精确本地回退
     -> 输出比较结果、风险与真实平台链接
 ```
 
-FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直接 MCP。浏览器自动化只允许使用 Ego Browser；Kimi WebBridge、Chrome Control、Playwright 和旧租房 Skills 不属于 v0.2 调用链。
+FlyAI 在本项目中是调用飞猪服务的 CLI，不是注册到 Codex 的直接 MCP。浏览器自动化只允许使用 Ego Browser；Kimi WebBridge、Chrome Control、Playwright 和旧租房 Skills 不属于 v0.3 调用链。
 
 所有动态价格必须带来源和查询时间。缺失的票价、库存、行李或退改字段保持为“未返回”，不推断为已含税或有余票。
+
+### 通用门户与地点事实
+
+当用户所在城市没有机场，或附近存在多个可达机场/铁路门户时，Skill 不会将某个城市、机场或历史路线写死为规则。它会先用高德发现候选门户，再让航班、铁路与接驳 Skills 返回事实，按门到门已知总成本、耗时、换乘数、缓冲、时间窗、疲劳偏好和证据完整度确定性比较。
+
+地面费用、营业状态或天气未返回时始终显示“未返回”，不会进入伪精确总价。高德提供国内 POI、周边与路径事实；FlyAI 提供机酒景产品；Ego Browser 只核验官方开放状态、库存或登录价。QWeather 是可选的户外风险层，会影响景点排序与接驳缓冲，但不替代票务、地图或开放事实。
 
 ### Visualize 优先，事实永远精确
 
@@ -125,6 +132,8 @@ travel-assistant render-plan --format svg --output itinerary.svg < itinerary.jso
 
 Visualize、HTML、SVG 和 Markdown 全部读取同一份 `itinerary.json`。ImageGen 不进入事实链，不能书写或重绘时间、价格、班次和链接；v0.3 只会考虑将它用于不承载事实的装饰背景和 MCP-backed App UI。
 
+每张行程板顶部还有一条窄版数据健康条：只列出本次行程实际用到的供应商。`ready` 仅代表服务配置或探测正常，不代表某张票、余票、路线或天气已经核验；出现降级时，健康条会给出不含敏感值的配置建议，并链接到凭据说明。
+
 <h2 id="security">配置安全</h2>
 
 <p align="center">
@@ -139,7 +148,8 @@ Visualize、HTML、SVG 和 Markdown 全部读取同一份 `itinerary.json`。Ima
 | 高德 JS API | [JS API v2 前置准备](https://lbs.amap.com/api/javascript-api-v2/prerequisites) | `AMAP_JSAPI_KEY`、`AMAP_SECURITY_CODE` | 可选交互地图；不是路线服务必需项 |
 | FlyAI / 飞猪 | [FlyAI Open Platform](https://open.fly.ai/) | `FLYAI_API_KEY` | 航班和酒店的增强访问；CLI 固定为 `@fly-ai/flyai-cli@1.0.16`，不是 Codex 直连 MCP |
 | 飞常准 | [Variflight AI Open Platform](https://ai.variflight.com/) | `VARIFLIGHT_API_KEY` | 按需核验航班状态、准点率或价格；新用户试用与有效期以账户控制台为准 |
-| Vigolive | 供应商账户 | `VIGOLIVE_API_KEY` | 仅 v2 租房预留，v0.2 不读取 |
+| QWeather | [项目与凭据](https://dev.qweather.com/docs/configuration/project-and-key/)；[JWT 认证](https://dev.qweather.com/docs/configuration/authentication/) | `QWEATHER_API_HOST`、`QWEATHER_KEY_ID`、`QWEATHER_DEVELOPER_ID`、`QWEATHER_PROJECT_ID`、`QWEATHER_PRIVATE_KEY_PATH` | 可选天气、预警、能见度与户外风险；私钥只放仓库外的 `0600` 文件 |
+| Vigolive | 供应商账户 | `VIGOLIVE_API_KEY` | 仅 v2 租房预留，v0.3 不读取 |
 
 12306 公共查询不要求 API Key；本项目使用固定提交的 [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306)。Ego Browser 的登录态由其独立应用管理，不写入本项目凭据文件。
 
@@ -163,11 +173,12 @@ https://github.com/19Chris19/china-travel-assistant
 3. 运行 ./scripts/install-local.sh。
 4. 运行 ./scripts/setup-credentials.sh，创建 ~/.config/china-travel-assistant/credentials.env，并确认权限为 0600。
 5. 只提示我在本地填写已经轮换过的 AMAP_WEBSERVICE_KEY、AMAP_JSAPI_KEY、AMAP_SECURITY_CODE、FLYAI_API_KEY 和 VARIFLIGHT_API_KEY；不要让我把 Key 粘贴到对话，不输出真实 Key，也不要把 Key 放进命令行、MCP URL、日志或文件提交。
-6. 运行 travel-assistant doctor；默认不要运行 doctor --live，除非我明确同意在线探测。
-7. 检查八个 Agent Skills、china-12306 MCP、可选 variflight MCP、Ego Browser Skill 和 Visualize 能力状态，并报告 ready、missing、expired、forbidden、rate_limited 或 degraded 类别。
-8. 不启用 Kimi WebBridge、Chrome Control、Playwright 或 v2 租房 Skills；浏览器核验只使用 Ego Browser。
-9. 提醒我完全退出并重启 Codex，使 Plugin、Skills 和 MCP 正式重载；Visualize 不可用时保留本地 HTML/SVG 回退，不要伪装成已调用。
-10. 只完成安装、配置检查和预订链接准备；不执行实名、不执行下单、不执行支付、不执行退改。
+6. 如需户外风险，请引导我在本地创建 QWeather Ed25519 JWT 配置：QWEATHER_API_HOST、QWEATHER_KEY_ID、QWEATHER_DEVELOPER_ID、QWEATHER_PROJECT_ID 与仓库外、权限 0600 的 QWEATHER_PRIVATE_KEY_PATH；不要让私钥内容进入对话或仓库。
+7. 运行 travel-assistant doctor；默认不要运行 doctor --live，除非我明确同意在线探测。
+8. 检查八个 Agent Skills、china-12306 MCP、可选 variflight MCP、QWeather、Ego Browser Skill 和 Visualize 能力状态，并报告 ready、missing、expired、forbidden、rate_limited、degraded、unknown 或 not_required 类别。
+9. 不启用 Kimi WebBridge、Chrome Control、Playwright 或 v2 租房 Skills；浏览器核验只使用 Ego Browser。
+10. 提醒我完全退出并重启 Codex，使 Plugin、Skills 和 MCP 正式重载；Visualize 不可用时保留本地 HTML/SVG 回退，不要伪装成已调用。
+11. 只完成安装、配置检查和预订链接准备；不执行实名、不执行下单、不执行支付、不执行退改。
 ```
 
 </details>
@@ -202,7 +213,7 @@ https://github.com/19Chris19/china-travel-assistant
 - [19Chris19/amap-lbs-skill](https://github.com/19Chris19/amap-lbs-skill)，上游 [AMap-Web/amap-lbs-skill](https://github.com/AMap-Web/amap-lbs-skill)
 - [19Chris19/flyai-skill](https://github.com/19Chris19/flyai-skill)，上游 [alibaba-flyai/flyai-skill](https://github.com/alibaba-flyai/flyai-skill)
 - [19Chris19/universal-travel-planner-skill](https://github.com/19Chris19/universal-travel-planner-skill)，历史流程参考 [chaoliuzhu65-tech/universal-travel-planner-skill](https://github.com/chaoliuzhu65-tech/universal-travel-planner-skill)
-- [19Chris19/x-cli](https://github.com/19Chris19/x-cli)，仅作 legacy 研究，不进入 v0.2 运行时；上游 [better-world-ai/x-cli](https://github.com/better-world-ai/x-cli)
+- [19Chris19/x-cli](https://github.com/19Chris19/x-cli)，仅作 legacy 研究，不进入 v0.3 运行时；上游 [better-world-ai/x-cli](https://github.com/better-world-ai/x-cli)
 - [19Chris19/ego-lite](https://github.com/19Chris19/ego-lite)，Ego Browser 外部运行时与 Skill；上游 [citrolabs/ego-lite](https://github.com/citrolabs/ego-lite)
 
 ### 外部依赖与架构参考

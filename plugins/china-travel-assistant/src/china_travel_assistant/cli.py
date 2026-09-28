@@ -148,6 +148,11 @@ def main(argv: list[str] | None = None) -> int:
                 "AMAP_SECURITY_CODE",
                 "FLYAI_API_KEY",
                 "VARIFLIGHT_API_KEY",
+                "QWEATHER_API_HOST",
+                "QWEATHER_KEY_ID",
+                "QWEATHER_DEVELOPER_ID",
+                "QWEATHER_PROJECT_ID",
+                "QWEATHER_PRIVATE_KEY_PATH",
                 "VIGOLIVE_API_KEY",
             ):
                 environment.pop(key, None)

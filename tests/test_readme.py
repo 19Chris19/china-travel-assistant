@@ -46,7 +46,7 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("./scripts/install-local.sh", text)
         self.assertIn("使用 $plan-china-trip", text)
         self.assertIn("Agent Skill", text[:2000])
-        self.assertIn("Release v0.2.0", text[:2000])
+        self.assertIn("Release v0.3.0", text[:2000])
 
     def test_readme_contains_runtime_capabilities_and_source_relationships(self):
         text = README.read_text(encoding="utf-8")
@@ -69,6 +69,11 @@ class ReadmeTests(unittest.TestCase):
             "AMAP_SECURITY_CODE",
             "FLYAI_API_KEY",
             "VARIFLIGHT_API_KEY",
+            "QWEATHER_API_HOST",
+            "QWEATHER_KEY_ID",
+            "QWEATHER_DEVELOPER_ID",
+            "QWEATHER_PROJECT_ID",
+            "QWEATHER_PRIVATE_KEY_PATH",
             "VIGOLIVE_API_KEY",
         ):
             self.assertIn(variable, text)
@@ -92,6 +97,8 @@ class ReadmeTests(unittest.TestCase):
             "https://lbs.amap.com/api/javascript-api-v2/prerequisites",
             "https://open.fly.ai/",
             "https://ai.variflight.com/",
+            "https://dev.qweather.com/docs/configuration/authentication/",
+            "https://dev.qweather.com/docs/finance/subscription/",
         ):
             self.assertIn(url, text)
         self.assertNotIn("https://mcp.variflight.com/", text)
@@ -99,10 +106,11 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("0600", text)
         self.assertIn("VIGOLIVE_API_KEY", text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9_-]{20,}")
-        self.assertIn("2026-08-27", text)
+        self.assertIn("2026-09-28", text)
         self.assertIn("150,000", text)
         self.assertIn("5,000", text)
         self.assertIn("¥50", text)
+        self.assertIn("Ed25519", text)
 
     def test_readme_design_tool_is_credited_as_inspiration(self):
         text = README.read_text(encoding="utf-8")

@@ -1,19 +1,20 @@
 # 凭据申请、额度与本地配置
 
-最后核验：`2026-08-27`。配额、试用金、有效期和产品权限可能变化，官方控制台永远高于本文快照。
+最后核验：`2026-09-28`。配额、试用金、有效期和产品权限可能变化，官方控制台永远高于本文快照。
 
 本项目只在本机读取凭据。真实值统一放在 `~/.config/china-travel-assistant/credentials.env`，文件权限必须是 `0600`；环境变量会覆盖同名文件值。不要把 Key 放进命令行参数、远程 MCP URL、README、截图、Issue、HTML、日志或提交记录。
 
 ## 总览
 
-| 变量或运行时 | Key 类型 | v0.2 必需 | 官方入口 | 已核验额度与有效期 |
+| 变量或运行时 | Key 类型 | v0.3 必需 | 官方入口 | 已核验额度与有效期 |
 | --- | --- | --- | --- | --- |
 | `AMAP_WEBSERVICE_KEY` | 高德 Web Service Key | 接驳/POI 必需 | [创建项目与 Key](https://lbs.amap.com/api/webservice/create-project-and-key) | 个人认证非商业用途有自认证日起一年的免费月配额；当前基础 LBS `150,000/月`、基础搜索 `5,000/月` |
-| `AMAP_JSAPI_KEY` | 高德 JS API Key | 否 | [JS API v2 前置准备](https://lbs.amap.com/api/javascript-api-v2/prerequisites) | 跟随高德账户和应用类型；v0.2 精确 HTML/SVG 不依赖它 |
+| `AMAP_JSAPI_KEY` | 高德 JS API Key | 否 | [JS API v2 前置准备](https://lbs.amap.com/api/javascript-api-v2/prerequisites) | 跟随高德账户和应用类型；v0.3 精确 HTML/SVG 不依赖它 |
 | `AMAP_SECURITY_CODE` | JS API 安全密钥 | 否 | 高德控制台 JS API 应用详情 | 与对应 JS API Key 配套，不是 Web Service Key |
 | `FLYAI_API_KEY` | FlyAI Open Platform API Key | 航班/酒店增强可选 | [FlyAI Open Platform](https://open.fly.ai/) | 官网未公开固定赠送额度或统一有效期；以账户控制台为准 |
 | `VARIFLIGHT_API_KEY` | 飞常准 Aviation MCP/API Key | 否 | [Variflight AI Open Platform](https://ai.variflight.com/) | 官网当前写明新用户 `¥50` 试用额度；有效期和可用接口以控制台为准 |
-| `VIGOLIVE_API_KEY` | 未来租房供应商 Key | 否 | 尚未纳入 v0.2 | 仅 v2 预留，v0.2 运行时不读取 |
+| QWeather JWT | Ed25519 JWT | 户外风险可选 | [项目和凭据](https://dev.qweather.com/docs/configuration/project-and-key/)；[JWT 认证](https://dev.qweather.com/docs/configuration/authentication/) | 免费订阅当前列出基础服务 `1000 次/天`；署名、接口和有效期以订阅页及控制台为准 |
+| `VIGOLIVE_API_KEY` | 未来租房供应商 Key | 否 | 尚未纳入 v0.3 | 仅 v2 预留，v0.3 运行时不读取 |
 | 12306 MCP | 无查询 Key | 火车能力需要运行时 | [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306) | 公共查询不要求 API Key，余票仍以 12306 实时结果为准 |
 | Ego Browser | 无本项目 API Key | 登录页核验时需要 | [ego-lite](https://github.com/citrolabs/ego-lite) | 登录态由独立应用管理；当前上游说明 macOS 可用，Windows/Linux 在路线图中 |
 | Visualize | 无本项目 API Key | 否 | [Visualizations 官方说明](https://learn.chatgpt.com/docs/visualizations) | 逐步开放，取决于账号、平台、版本和工作区；Codex CLI/IDE 当前不渲染 |
@@ -25,7 +26,7 @@
 3. 查看[基础服务计费页](https://lbs.amap.com/pages/base_service_price)和[服务升级页](https://lbs.amap.com/upgrade)。当前官方口径是：非商业目的个人认证开发者自注册认证日起享有一年的免费月配额，个人认证的基础 LBS 服务为 `150,000/月`、QPS `3`，基础搜索为 `5,000/月`、QPS `3`。
 4. 月配额超限后按官方规则付费购买或等待新周期，不要通过重试绕过限额。商业、组织或高调用量用途应按高德协议选择企业认证或技术服务许可。
 
-`AMAP_JSAPI_KEY` 和 `AMAP_SECURITY_CODE` 只在未来使用高德 JS 地图时需要。v0.2 的路线适配器只读 `AMAP_WEBSERVICE_KEY`，本地 HTML/SVG 行程板也不在 URL 中携带任何 Key。
+`AMAP_JSAPI_KEY` 和 `AMAP_SECURITY_CODE` 只在未来使用高德 JS 地图时需要。v0.3 的路线适配器只读 `AMAP_WEBSERVICE_KEY`，本地 HTML/SVG 行程板也不在 URL 中携带任何 Key。
 
 常见状态：未填或运行时未读取为 `missing`；Key 类型错误或权限不足通常为 `forbidden`；超过配额通常为 `rate_limited` 或 `degraded`。控制台中的应用类型、服务开通和用量记录是排查依据。
 
@@ -40,10 +41,30 @@ FlyAI 官网在核验日没有公开承诺固定赠送额度、统一试用有�
 ## 飞常准
 
 1. 从 [Variflight AI Open Platform](https://ai.variflight.com/) 注册并创建 Key，写入 `VARIFLIGHT_API_KEY`。
-2. v0.2 固定外部依赖 `@variflight-ai/variflight-mcp@1.0.3`，只用于按需增强航班状态、准点率和价格证据，不是核心发布的单点依赖。
+2. v0.3 固定外部依赖 `@variflight-ai/variflight-mcp@1.0.3`，只用于按需增强航班状态、准点率和价格证据，不是核心发布的单点依赖。
 3. 官方首页当前写明新用户注册可获 `¥50` Aviation MCP 试用额度；没有在公开页承诺统一有效期。余额、截止日期、接口权限和超额计费必须查看当前账户控制台。
 
 `401` 通常归类为 `expired` 或无效凭据，`403` 为 `forbidden`，余额不足为 `degraded`，`429` 为 `rate_limited`。这些状态必须触发可解释降级，不能用推测值补齐飞常准字段。
+
+## QWeather JWT
+
+QWeather 只为户外景点排序、能见度/降水/大风风险和接驳缓冲提供可选事实，不替代高德路线或票务来源。根据[官方认证文档](https://dev.qweather.com/docs/configuration/authentication/)，本项目使用 Ed25519 签名的 JWT，不使用将逐步受限的旧式 API Key 路径。请按[API Host 文档](https://dev.qweather.com/docs/configuration/api-host/)在控制台取得项目专用 HTTPS Host，不要猜测或共享 Host。
+
+1. 在[和风天气控制台](https://console.qweather.com/)创建项目和 JWT 凭据，并上传自己本地生成的 Ed25519 公钥。
+2. 将 Host、凭据 ID、开发者 ID、项目 ID 写入 `credentials.env`。私钥只保存于仓库外，例如 `~/.config/china-travel-assistant/qweather-ed25519-private.pem`，并设置权限 `0600`。
+3. 在 `credentials.env` 中仅写私钥路径，而不是私钥内容：
+
+   ```dotenv
+   QWEATHER_API_HOST=https://your-project.qweatherapi.com
+   QWEATHER_KEY_ID=
+   QWEATHER_DEVELOPER_ID=
+   QWEATHER_PROJECT_ID=
+   QWEATHER_PRIVATE_KEY_PATH=$HOME/.config/china-travel-assistant/qweather-ed25519-private.pem
+   ```
+
+4. 默认 `travel-assistant doctor` 只校验字段、文件存在和私钥权限；只有 `doctor --live` 才会构造短时 JWT 并发出最小天气连通性探测。JWT 不写入日志、HTML、截图或 Git。
+
+QWeather 的免费订阅、请求上限和所需署名以[官方订阅说明](https://dev.qweather.com/docs/finance/subscription/)为准。结果页面必须显示数据来源；若订阅、Host、私钥或权限不可用，系统使用 `not_required`、`missing` 或 `degraded` 状态并继续交付不依赖天气的路线。
 
 ## 12306、Ego Browser 与 Visualize
 
@@ -67,6 +88,11 @@ FlyAI 官网在核验日没有公开承诺固定赠送额度、统一试用有�
    AMAP_SECURITY_CODE=
    FLYAI_API_KEY=
    VARIFLIGHT_API_KEY=
+   QWEATHER_API_HOST=
+   QWEATHER_KEY_ID=
+   QWEATHER_DEVELOPER_ID=
+   QWEATHER_PROJECT_ID=
+   QWEATHER_PRIVATE_KEY_PATH=
    VIGOLIVE_API_KEY=
    ```
 
@@ -105,5 +131,7 @@ FlyAI 官网在核验日没有公开承诺固定赠送额度、统一试用有�
 | `forbidden` | 账号、套餐、应用类型或接口无权限，常见于 403 | 检查产品权限和服务条款，不暴力重试 |
 | `rate_limited` | 请求过快或超过额度，常见于 429 | 等待、降低频率或在控制台检查配额 |
 | `degraded` | 余额不足、部分结果、宿主不支持或证据不完整 | 保留成功来源与未知字段，使用声明的降级路径 |
+| `unknown` | 宿主能力只能在实际展示时协商，例如 Visualize | 使用确定性 HTML/SVG/Markdown 回退，不伪装为已启用 |
+| `not_required` | 该可选增强未被当前行程请求或尚未配置 | 不阻塞核心路线；需要该能力时按官方入口补齐配置 |
 
 任何曾在聊天、代码、日志或历史配置中暴露的 Key 都必须先在提供商控制台轮换，再写入新的 `0600` 文件。提交前运行 `gitleaks detect --no-banner --redact --source .`。

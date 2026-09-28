@@ -19,6 +19,7 @@ The following repositories were forked under the GitHub account 19Chris19. Their
 
 - @fly-ai/flyai-cli@1.0.16, MIT package metadata. Used as the primary flight and hotel CLI.
 - @variflight-ai/variflight-mcp@1.0.3, ISC in npm package metadata. The referenced GitHub repository did not contain the cited license file at audit time, so no source from it is redistributed here.
+- QWeather Developer Services is an optional JWT-authenticated weather source. It is not vendored; its terms, subscription limits, attribution, and data license remain authoritative at https://dev.qweather.com/docs/finance/subscription/.
 - AMap Web Service, FlyAI/Fliggy, Variflight, China Railway, and travel websites remain governed by their own terms, quotas, and data licenses.
 
 ## Reference Only

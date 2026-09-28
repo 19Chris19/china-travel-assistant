@@ -100,7 +100,7 @@ class PresentationTests(unittest.TestCase):
         plan["itineraries"][0]["legs"][0]["sources"] = ["12306", "amap"]
         plan["provider_health"] = [
             {"provider": "12306", "status": "ready", "remediation": "ignore"},
-            {"provider": "amap", "status": "missing", "remediation": "sk-secret-must-not-render"},
+            {"provider": "amap", "status": "missing", "remediation": "redacted-test-value-must-not-render"},
             {"provider": "unexpected", "status": "degraded", "remediation": "also-ignore"},
         ]
 
@@ -111,7 +111,7 @@ class PresentationTests(unittest.TestCase):
         self.assertIn("数据健康：部分降级", html)
         self.assertIn("高德: missing", html)
         self.assertIn("AMAP_WEBSERVICE_KEY", html)
-        self.assertNotIn("sk-secret-must-not-render", html)
+        self.assertNotIn("redacted-test-value-must-not-render", html)
         self.assertNotIn("unexpected", html)
         self.assertIn("数据健康：部分降级", svg)
         self.assertIn("改善体验", markdown)

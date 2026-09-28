@@ -53,6 +53,11 @@ class PackagingTests(unittest.TestCase):
             "AMAP_SECURITY_CODE",
             "FLYAI_API_KEY",
             "VARIFLIGHT_API_KEY",
+            "QWEATHER_API_HOST",
+            "QWEATHER_KEY_ID",
+            "QWEATHER_DEVELOPER_ID",
+            "QWEATHER_PROJECT_ID",
+            "QWEATHER_PRIVATE_KEY_PATH",
             "VIGOLIVE_API_KEY",
         }
         present = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", template, re.MULTILINE))

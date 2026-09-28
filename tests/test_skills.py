@@ -76,6 +76,13 @@ class SkillTests(unittest.TestCase):
         self.assertIn("itinerary.json", text)
         self.assertIn("ImageGen must not", text)
 
+    def test_parent_skill_explains_generic_gateways_weather_and_safe_health(self):
+        text = (SKILLS / "plan-china-trip" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("GatewayCandidate", text)
+        self.assertIn("QWeather", text)
+        self.assertIn("provider-health", text)
+        self.assertIn("Do not hard-code a city, airport", text)
+
 
 if __name__ == "__main__":
     unittest.main()
