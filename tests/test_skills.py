@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -18,6 +19,19 @@ EXPECTED = {
 
 
 class SkillTests(unittest.TestCase):
+    def test_trigger_corpus_has_disjoint_train_and_holdout_samples(self):
+        path = ROOT / "plugins" / "china-travel-assistant" / "evals" / "trigger-cases.json"
+        corpus = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(set(corpus["cases"]), EXPECTED)
+        self.assertEqual(corpus["split"], {"train_per_class": 5, "holdout_per_class": 3})
+        for name, cases in corpus["cases"].items():
+            self.assertEqual(len(cases["positive"]), 8, name)
+            self.assertEqual(len(cases["negative"]), 8, name)
+            self.assertEqual(len(set(cases["positive"] + cases["negative"])), 16, name)
+            header = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8").split("---", 2)[1]
+            self.assertIn("Use when", header, name)
+            self.assertIn("Do not use", header, name)
+
     def test_expected_skills_have_valid_minimal_frontmatter(self):
         self.assertEqual({path.name for path in SKILLS.iterdir() if path.is_dir()}, EXPECTED)
         for name in EXPECTED:
@@ -61,7 +75,7 @@ class SkillTests(unittest.TestCase):
         text = (SKILLS / "plan-china-trip" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("$explore-china-routes", text)
         self.assertIn("$present-china-trip", text)
-        self.assertIn("Never enable Pro Max without an explicit user choice", text)
+        self.assertIn("Never enable 远征 (`pro_max`) without an explicit user choice", text)
 
     def test_exploration_tiers_share_high_baseline_capabilities(self):
         text = (SKILLS / "explore-china-routes" / "SKILL.md").read_text(encoding="utf-8")
@@ -75,6 +89,13 @@ class SkillTests(unittest.TestCase):
         self.assertIn("Visualize", text)
         self.assertIn("itinerary.json", text)
         self.assertIn("ImageGen must not", text)
+
+    def test_parent_skill_explains_generic_gateways_weather_and_safe_health(self):
+        text = (SKILLS / "plan-china-trip" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("GatewayCandidate", text)
+        self.assertIn("QWeather", text)
+        self.assertIn("provider-health", text)
+        self.assertIn("Do not hard-code a city, airport", text)
 
 
 if __name__ == "__main__":

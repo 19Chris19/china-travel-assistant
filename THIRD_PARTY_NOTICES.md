@@ -2,6 +2,8 @@
 
 This project contains original orchestration code and Skills under the MIT License. It does not relicense third-party services, data, trademarks, or content.
 
+The local credential configuration page at `plugins/china-travel-assistant/credential-ui/` is adapted from the MIT-licensed `oil-skill-creator/assets/credential-ui` component by oil-oil. This project adds provider-specific manifests and integrates its profile runner with the travel CLI and MCP launchers. The bundled component is not represented as an original implementation.
+
 ## Real GitHub Forks
 
 The following repositories were forked under the GitHub account 19Chris19. Their upstream notices and licenses remain authoritative inside each fork.
@@ -19,6 +21,7 @@ The following repositories were forked under the GitHub account 19Chris19. Their
 
 - @fly-ai/flyai-cli@1.0.16, MIT package metadata. Used as the primary flight and hotel CLI.
 - @variflight-ai/variflight-mcp@1.0.3, ISC in npm package metadata. The referenced GitHub repository did not contain the cited license file at audit time, so no source from it is redistributed here.
+- QWeather Developer Services is an optional JWT-authenticated weather source. It is not vendored; its terms, subscription limits, attribution, and data license remain authoritative at https://dev.qweather.com/docs/finance/subscription/.
 - AMap Web Service, FlyAI/Fliggy, Variflight, China Railway, and travel websites remain governed by their own terms, quotas, and data licenses.
 
 ## Reference Only

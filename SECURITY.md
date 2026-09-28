@@ -4,7 +4,7 @@
 
 Never commit API keys, cookies, browser profiles, authorization headers, identity documents, order numbers, QR codes, or payment data.
 
-Store provider keys in ~/.config/china-travel-assistant/credentials.env. The file must use mode 0600. Runtime diagnostics report only state labels and never secret values.
+On desktop, use the local configuration page and system credential store. The runtime rejects the legacy `credentials.env` file; only explicitly injected CI/container environment variables are accepted. Keep the QWeather private key outside the repository with mode `0600`. Runtime diagnostics report only state labels and never secret values.
 
 Keys previously pasted into chat, committed to a file, or embedded in generated URLs must be considered exposed and rotated before publication.
 

@@ -1,4 +1,4 @@
 interface:
-  display_name: "OmniRoute 路线推演 Skill"
+  display_name: "路线推演 Skill"
   short_description: "确定性探索飞铁联运、周边机场、分段票和挑战路线"
   default_prompt: "Use $explore-china-routes to generate a deterministic Standard, Pro, or explicitly requested Pro Max route search plan, keep a stable baseline, and explain every unconventional option's benefit, burden, risk, fallback, and evidence."

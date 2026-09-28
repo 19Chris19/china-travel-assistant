@@ -9,6 +9,13 @@ from china_travel_assistant.cli import main
 
 
 class CliTests(unittest.TestCase):
+    def test_plan_cli_accepts_chinese_tier_alias(self):
+        payload = {"request": {"origin": "沈阳", "destination": "苏州", "date_start": "2026-08-31"}}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["plan", json.dumps(payload, ensure_ascii=False), "--tier", "从容"]), 0)
+        self.assertEqual(json.loads(output.getvalue())["resolved_tier"], "standard")
+
     def test_plan_emits_resolved_tier_search_plan_and_itineraries(self):
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -59,6 +66,41 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("JSON object", stderr.getvalue())
 
+    def test_plan_normalizes_multisource_facts_and_rejects_invalid_fact_arrays(self):
+        stdout = io.StringIO()
+        with redirect_stdout(stdout):
+            result = main(
+                [
+                    "plan",
+                    json.dumps(
+                        {
+                            "origin": "无机场城市",
+                            "destination": "目的地",
+                            "date_start": "2026-09-28",
+                            "gateway_candidates": [
+                                {
+                                    "gateway_id": "a",
+                                    "name": "门户 A",
+                                    "gateway_type": "airport",
+                                    "origin": "无机场城市",
+                                    "destination": "目的地",
+                                    "flight_total_cny": 500,
+                                    "ground_access": [{"endpoint": "门户 A", "mode": "rail", "cost_cny": 20}],
+                                }
+                            ],
+                            "provider_health": [
+                                {"provider": "amap", "status": "ready", "capabilities": ["transfer"]}
+                            ],
+                        }
+                    ),
+                ]
+            )
+
+        self.assertEqual(result, 0)
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["gateway_candidates"][0]["total_known_cost_cny"], 520)
+        self.assertEqual(payload["provider_health"][0]["provider"], "amap")
+
     def test_rank_offers_rejects_non_array_json(self):
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -85,10 +127,7 @@ class CliTests(unittest.TestCase):
         output = io.StringIO()
         with (
             patch("china_travel_assistant.cli.AmapClient") as client,
-            patch(
-                "china_travel_assistant.cli.load_credentials",
-                return_value={"AMAP_WEBSERVICE_KEY": "file-key"},
-            ),
+            patch.dict(os.environ, {"AMAP_WEBSERVICE_KEY": "file-key"}),
             redirect_stdout(output),
         ):
             client.return_value.route.return_value = [{"mode": "transit"}]
@@ -121,13 +160,6 @@ class CliTests(unittest.TestCase):
     def test_flyai_wrapper_injects_unified_credentials(self):
         completed = type("Completed", (), {"returncode": 0})()
         with (
-            patch(
-                "china_travel_assistant.cli.load_credentials",
-                return_value={
-                    "FLYAI_API_KEY": "file-key",
-                    "AMAP_WEBSERVICE_KEY": "no-amap",
-                },
-            ),
             patch("china_travel_assistant.cli.shutil.which", return_value="/usr/bin/flyai"),
             patch("china_travel_assistant.cli.subprocess.run", return_value=completed) as run,
             patch.dict(
@@ -137,6 +169,7 @@ class CliTests(unittest.TestCase):
                     "AMAP_WEBSERVICE_KEY": "inherited-amap",
                     "VARIFLIGHT_API_KEY": "inherited-vari",
                     "VIGOLIVE_API_KEY": "inherited-vigo",
+                    "FLYAI_API_KEY": "file-key",
                 },
                 clear=True,
             ),

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "id": "china-travel-assistant",
+  "label": "FlyAI API Key",
+  "credential": "china-travel-assistant/flyai/default",
+  "ui": {"title": "连接 FlyAI", "placeholder": "粘贴 FlyAI API Key"}
+}

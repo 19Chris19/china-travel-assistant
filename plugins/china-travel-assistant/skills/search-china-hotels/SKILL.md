@@ -1,6 +1,6 @@
 ---
 name: search-china-hotels
-description: Search and compare hotels in mainland China with FlyAI and verify room-level price, cancellation, and availability details through Ego Browser when needed. Use when the user asks for hotels, accommodation, lodging near a station or venue, or price and condition comparison.
+description: Search mainland-China hotels, rooms, prices, cancellation terms, and availability with FlyAI; request Ego page verification only when needed. Use when the user asks for accommodation, or when a full itinerary needs lodging facts. Do not use for flight, train, ground-transfer, or webpage-only questions; do not compose the complete trip here.
 ---
 
 # Search China Hotels

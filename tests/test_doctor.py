@@ -11,28 +11,26 @@ from china_travel_assistant.doctor import Doctor, _ego_skill_version, load_crede
 
 
 class DoctorTests(unittest.TestCase):
-    def test_credentials_file_supports_export_and_never_overrides_environment(self):
+    def test_legacy_plaintext_credentials_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "credentials.env"
             path.write_text(
                 'export AMAP_WEBSERVICE_KEY="from-file"\nVARIFLIGHT_API_KEY=file-key\n',
                 encoding="utf-8",
             )
-            with patch.dict(os.environ, {"AMAP_WEBSERVICE_KEY": "from-env"}, clear=True):
-                values = load_credentials(path)
-
-        self.assertEqual(values["AMAP_WEBSERVICE_KEY"], "from-env")
-        self.assertEqual(values["VARIFLIGHT_API_KEY"], "file-key")
+            with self.assertRaisesRegex(ValueError, "legacy plaintext"):
+                load_credentials(path)
 
     def test_default_credentials_path_respects_xdg_config_home(self):
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "china-travel-assistant" / "credentials.env"
+            path = Path(directory) / "china-travel-assistant" / "settings.env"
             path.parent.mkdir()
-            path.write_text("AMAP_WEBSERVICE_KEY=xdg-key\n", encoding="utf-8")
+            path.write_text("AMAP_WEBSERVICE_KEY=ignored\nQWEATHER_KEY_ID=xdg-id\n", encoding="utf-8")
             with patch.dict(os.environ, {"XDG_CONFIG_HOME": directory}, clear=True):
                 values = load_credentials()
 
-        self.assertEqual(values["AMAP_WEBSERVICE_KEY"], "xdg-key")
+        self.assertNotIn("AMAP_WEBSERVICE_KEY", values)
+        self.assertEqual(values["QWEATHER_KEY_ID"], "xdg-id")
 
     def test_default_doctor_does_not_call_live_probes_or_print_secrets(self):
         secret = "secret-value-that-must-not-appear"
@@ -77,11 +75,45 @@ class DoctorTests(unittest.TestCase):
         ):
             result = Doctor(live=False).run()
 
-        for provider in ("amap", "flyai", "variflight", "12306", "ego-browser"):
+        for provider in ("amap", "flyai", "variflight", "12306", "qweather", "ego-browser", "visualize"):
             self.assertIn("version", result[provider], provider)
+            self.assertIn("checked_at", result[provider], provider)
+            self.assertIn("capabilities", result[provider], provider)
         self.assertEqual(result["amap"]["version"], "web-service-v3-v5")
         self.assertEqual(result["variflight"]["version"], "1.0.3")
         self.assertEqual(result["ego-browser"]["skill_version"], "1.2.3")
+        self.assertEqual(result["qweather"]["status"], "not_required")
+        self.assertEqual(result["visualize"]["status"], "unknown")
+
+    def test_qweather_configuration_is_checked_without_a_network_probe_by_default(self):
+        with tempfile.TemporaryDirectory() as directory:
+            key = Path(directory) / "private.pem"
+            key.write_text("fixture", encoding="utf-8")
+            key.chmod(0o600)
+            credentials = Path(directory) / "settings.env"
+            credentials.write_text(
+                "\n".join(
+                    (
+                        "QWEATHER_API_HOST=https://example.qweatherapi.com",
+                        "QWEATHER_KEY_ID=credential-id",
+                        "QWEATHER_DEVELOPER_ID=Q123456789",
+                        "QWEATHER_PROJECT_ID=project-id",
+                        f"QWEATHER_PRIVATE_KEY_PATH={key}",
+                    )
+                ),
+                encoding="utf-8",
+            )
+            output = io.StringIO()
+            with redirect_stdout(output):
+                result = Doctor(
+                    live=False,
+                    credentials_path=credentials,
+                    probes={"qweather": lambda _: self.fail("probe called")},
+                ).run()
+
+        self.assertEqual(result["qweather"]["status"], "ready")
+        self.assertEqual(result["qweather"]["check"], "configuration_only")
+        self.assertNotIn("credential-id", output.getvalue())
 
     def test_ego_skill_version_is_read_from_installed_frontmatter(self):
         with tempfile.TemporaryDirectory() as directory:

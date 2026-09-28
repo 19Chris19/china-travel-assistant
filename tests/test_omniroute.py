@@ -1,7 +1,22 @@
 import unittest
 
-from china_travel_assistant.contracts import ExplorationTier, ItineraryLeg, RiskLevel, TravelRequest
-from china_travel_assistant.omniroute import build_search_plan, compose_itineraries, plan_trip, policy_for, resolve_tier
+from china_travel_assistant.contracts import (
+    ExplorationTier,
+    GatewayCandidate,
+    ItineraryLeg,
+    PlaceEvidence,
+    RiskLevel,
+    TravelRequest,
+)
+from china_travel_assistant.omniroute import (
+    build_search_plan,
+    compose_itineraries,
+    plan_trip,
+    policy_for,
+    rank_gateway_candidates,
+    rank_place_evidence,
+    resolve_tier,
+)
 
 
 def request(**overrides):
@@ -48,7 +63,7 @@ class OmniRouteTests(unittest.TestCase):
         pro = build_search_plan(request(tier="pro"), policy_for(request(tier="pro")))
         pro_max = build_search_plan(request(tier="pro_max"), policy_for(request(tier="pro_max")))
 
-        self.assertEqual({item.template for item in standard}, {"direct", "nearby_gateway"})
+        self.assertEqual({item.template for item in standard}, {"direct", "gateway_scan"})
         self.assertIn("flight_train", {item.template for item in pro})
         self.assertIn("overnight_multimodal", {item.template for item in pro_max})
         self.assertGreater(len(pro_max), len(pro))
@@ -135,6 +150,93 @@ class OmniRouteTests(unittest.TestCase):
     def test_pro_max_respects_explicit_stable_risk_cap(self):
         item = request(tier="pro_max", risk_tolerance="stable")
         self.assertEqual(policy_for(item).risk_budget, RiskLevel.STABLE)
+
+    def test_generic_gateways_rank_complete_door_to_door_costs_before_unknown_costs(self):
+        candidates = [
+            GatewayCandidate.from_mapping(
+                {
+                    "gateway_id": "unknown-ground",
+                    "name": "候选门户乙",
+                    "gateway_type": "airport",
+                    "origin": "无机场城市",
+                    "destination": "目的地",
+                    "flight_total_cny": 300,
+                    "ground_access": [{"endpoint": "候选门户乙", "mode": "bus", "duration_minutes": 60}],
+                }
+            ),
+            GatewayCandidate.from_mapping(
+                {
+                    "gateway_id": "complete-ground",
+                    "name": "候选门户甲",
+                    "gateway_type": "airport",
+                    "origin": "无机场城市",
+                    "destination": "目的地",
+                    "flight_total_cny": 350,
+                    "ground_access": [{"endpoint": "候选门户甲", "mode": "rail", "cost_cny": 30, "duration_minutes": 45, "transfers": 0}],
+                }
+            ),
+        ]
+
+        ranked = rank_gateway_candidates(candidates)
+
+        self.assertEqual(ranked[0].gateway_id, "complete-ground")
+        self.assertEqual(ranked[0].rank, 1)
+        self.assertIn("已知门到门成本", ranked[0].ranking_reason)
+        self.assertIn("未返回", ranked[1].ranking_reason)
+
+    def test_place_ranking_keeps_closed_or_weather_risky_places_as_explicit_lower_priority(self):
+        places = [
+            PlaceEvidence.from_mapping(
+                {
+                    "place_id": "weather-risk",
+                    "name": "户外景点",
+                    "weather_risk": {"location": "户外景点", "risk_level": "challenge"},
+                }
+            ),
+            PlaceEvidence.from_mapping(
+                {
+                    "place_id": "open-stable",
+                    "name": "室内景点",
+                    "opening_status": "开放",
+                    "weather_risk": {"location": "室内景点", "risk_level": "stable"},
+                }
+            ),
+            PlaceEvidence.from_mapping(
+                {
+                    "place_id": "closed",
+                    "name": "闭园景点",
+                    "opening_status": "关闭",
+                }
+            ),
+        ]
+
+        ranked = rank_place_evidence(places)
+
+        self.assertEqual([item.place_id for item in ranked], ["open-stable", "weather-risk", "closed"])
+        self.assertIn("不可用", ranked[-1].ranking_reason)
+
+    def test_plan_includes_gateway_place_and_health_facts_without_affecting_route_composition(self):
+        result = plan_trip(
+            request(tier="standard"),
+            [leg("direct", "train", "沈阳", "苏州", total_price_cny=730)],
+            gateway_candidates=[
+                GatewayCandidate.from_mapping(
+                    {
+                        "gateway_id": "gateway",
+                        "name": "门户",
+                        "gateway_type": "airport",
+                        "origin": "沈阳",
+                        "destination": "苏州",
+                        "flight_total_cny": 500,
+                        "ground_access": [{"endpoint": "门户", "mode": "metro", "cost_cny": 8}],
+                    }
+                )
+            ],
+        )
+
+        self.assertEqual(result["gateway_candidates"][0]["total_known_cost_cny"], 508)
+        self.assertEqual(result["place_evidence"], [])
+        self.assertEqual(result["provider_health"], [])
 
 
 if __name__ == "__main__":

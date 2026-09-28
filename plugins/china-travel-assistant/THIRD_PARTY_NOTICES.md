@@ -4,6 +4,8 @@ This Python distribution is original orchestration code under the MIT License. I
 
 Runtime integrations:
 
+- The bundled local credential page is adapted from the MIT-licensed `oil-skill-creator/assets/credential-ui` component by oil-oil. This Plugin adds travel-provider manifests and runtime integration; it does not claim the page as original code.
+
 - `@fly-ai/flyai-cli@1.0.16`, MIT package metadata.
 - `@variflight-ai/variflight-mcp@1.0.3`, ISC in npm package metadata; no source is redistributed.
 - `mcp-server-12306` pinned to the revision recorded in the parent repository's `upstream-lock.yml`.

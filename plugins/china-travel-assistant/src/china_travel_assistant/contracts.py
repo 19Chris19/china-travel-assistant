@@ -18,6 +18,8 @@ class ProviderHealth(str, Enum):
     FORBIDDEN = "forbidden"
     RATE_LIMITED = "rate_limited"
     DEGRADED = "degraded"
+    UNKNOWN = "unknown"
+    NOT_REQUIRED = "not_required"
 
 
 class ExplorationTier(str, Enum):
@@ -31,6 +33,28 @@ class RiskLevel(str, Enum):
     STABLE = "stable"
     MANAGED = "managed"
     CHALLENGE = "challenge"
+
+
+TIER_ALIASES = {
+    "智能选择": ExplorationTier.AUTO,
+    "从容": ExplorationTier.STANDARD,
+    "拓界": ExplorationTier.PRO,
+    "远征": ExplorationTier.PRO_MAX,
+}
+TIER_LABELS = {
+    ExplorationTier.AUTO.value: "智能选择",
+    ExplorationTier.STANDARD.value: "从容",
+    ExplorationTier.PRO.value: "拓界",
+    ExplorationTier.PRO_MAX.value: "远征",
+}
+RISK_LABELS = {"stable": "稳妥", "managed": "可控", "challenge": "挑战"}
+
+
+def parse_tier(value: Any) -> ExplorationTier:
+    normalized = str(value).strip().casefold()
+    if normalized in TIER_ALIASES:
+        return TIER_ALIASES[normalized]
+    return ExplorationTier(normalized)
 
 
 class EvidenceStatus(str, Enum):
@@ -157,6 +181,11 @@ def _enum(value: Any, enum_type: type[Enum], *, field_name: str, default: Enum) 
         return default
     if isinstance(value, enum_type):
         return value
+    if enum_type is ExplorationTier:
+        try:
+            return parse_tier(value)
+        except ValueError:
+            pass
     try:
         return enum_type(str(value).strip().casefold())
     except ValueError as exc:
@@ -171,6 +200,14 @@ def _sources(value: Any, provider: str) -> tuple[str, ...]:
         raise ValueError("sources must be a list of provider names")
     sources = tuple(_required_text(item, field_name="sources item") for item in value)
     return tuple(dict.fromkeys(sources or (provider,)))
+
+
+def _text_tuple(value: Any, *, field_name: str) -> tuple[str, ...]:
+    if value is None or value == "":
+        return tuple()
+    if isinstance(value, str) or not isinstance(value, (list, tuple)):
+        raise ValueError(f"{field_name} must be a list of text values")
+    return tuple(dict.fromkeys(_required_text(item, field_name=field_name) for item in value))
 
 
 @dataclass(frozen=True)
@@ -524,3 +561,287 @@ class TransferLeg:
         payload["queried_at"] = self.queried_at.isoformat() if self.queried_at else None
         payload["total_duration_minutes"] = self.total_duration_minutes
         return payload
+
+
+@dataclass(frozen=True)
+class GroundAccessOption:
+    """One concrete, queryable origin-to-gateway or gateway-to-destination access leg."""
+
+    endpoint: str
+    mode: str
+    cost_cny: float | None = None
+    duration_minutes: int | None = None
+    transfers: int | None = None
+    buffer_minutes: int = 0
+    source: str | None = None
+    queried_at: datetime | None = None
+    evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "GroundAccessOption":
+        return cls(
+            endpoint=_required_text(value.get("endpoint"), field_name="endpoint"),
+            mode=_required_text(value.get("mode"), field_name="mode"),
+            cost_cny=_money(value.get("cost_cny"), field_name="cost_cny"),
+            duration_minutes=_optional_integer(value.get("duration_minutes"), field_name="duration_minutes"),
+            transfers=_optional_integer(value.get("transfers"), field_name="transfers"),
+            buffer_minutes=_integer(value.get("buffer_minutes", 0), field_name="buffer_minutes"),
+            source=_optional_text(value.get("source")),
+            queried_at=_datetime(value.get("queried_at"), field_name="queried_at"),
+            evidence_status=_enum(
+                value.get("evidence_status"),
+                EvidenceStatus,
+                field_name="evidence_status",
+                default=EvidenceStatus.PARTIAL,
+            ),
+        )
+
+    @property
+    def total_duration_minutes(self) -> int | None:
+        return None if self.duration_minutes is None else self.duration_minutes + self.buffer_minutes
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["queried_at"] = self.queried_at.isoformat() if self.queried_at else None
+        payload["evidence_status"] = self.evidence_status.value
+        payload["total_duration_minutes"] = self.total_duration_minutes
+        return payload
+
+
+@dataclass(frozen=True)
+class GatewayCandidate:
+    """A generic transport gateway, never a city-specific hard-coded rule."""
+
+    gateway_id: str
+    name: str
+    gateway_type: str
+    origin: str
+    destination: str
+    flight_total_cny: float | None = None
+    flight_duration_minutes: int | None = None
+    ground_access: tuple[GroundAccessOption, ...] = field(default_factory=tuple)
+    ticket_provider: str | None = None
+    queried_at: datetime | None = None
+    evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+    rank: int | None = None
+    ranking_reason: str | None = None
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "GatewayCandidate":
+        raw_access = value.get("ground_access", ())
+        if not isinstance(raw_access, (list, tuple)):
+            raise ValueError("ground_access must be a JSON array")
+        return cls(
+            gateway_id=_required_text(value.get("gateway_id"), field_name="gateway_id"),
+            name=_required_text(value.get("name"), field_name="name"),
+            gateway_type=_required_text(value.get("gateway_type", "airport"), field_name="gateway_type"),
+            origin=_required_text(value.get("origin"), field_name="origin"),
+            destination=_required_text(value.get("destination"), field_name="destination"),
+            flight_total_cny=_money(value.get("flight_total_cny"), field_name="flight_total_cny"),
+            flight_duration_minutes=_optional_integer(
+                value.get("flight_duration_minutes"), field_name="flight_duration_minutes"
+            ),
+            ground_access=tuple(GroundAccessOption.from_mapping(item) for item in raw_access),
+            ticket_provider=_optional_text(value.get("ticket_provider")),
+            queried_at=_datetime(value.get("queried_at"), field_name="queried_at"),
+            evidence_status=_enum(
+                value.get("evidence_status"),
+                EvidenceStatus,
+                field_name="evidence_status",
+                default=EvidenceStatus.PARTIAL,
+            ),
+            rank=_optional_integer(value.get("rank"), field_name="rank", minimum=1),
+            ranking_reason=_optional_text(value.get("ranking_reason")),
+        )
+
+    @property
+    def known_ground_cost_cny(self) -> float | None:
+        if not self.ground_access or any(item.cost_cny is None for item in self.ground_access):
+            return None
+        return sum(item.cost_cny for item in self.ground_access if item.cost_cny is not None)
+
+    @property
+    def total_known_cost_cny(self) -> float | None:
+        ground_cost = self.known_ground_cost_cny
+        if self.flight_total_cny is None or ground_cost is None:
+            return None
+        return self.flight_total_cny + ground_cost
+
+    @property
+    def total_duration_minutes(self) -> int | None:
+        durations = [self.flight_duration_minutes]
+        durations.extend(item.total_duration_minutes for item in self.ground_access)
+        if any(item is None for item in durations):
+            return None
+        return sum(item for item in durations if item is not None)
+
+    @property
+    def transfer_count(self) -> int | None:
+        if not self.ground_access or any(item.transfers is None for item in self.ground_access):
+            return None
+        return sum(item.transfers for item in self.ground_access if item.transfers is not None)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "gateway_id": self.gateway_id,
+            "name": self.name,
+            "gateway_type": self.gateway_type,
+            "origin": self.origin,
+            "destination": self.destination,
+            "flight_total_cny": self.flight_total_cny,
+            "flight_duration_minutes": self.flight_duration_minutes,
+            "ground_access": [item.to_dict() for item in self.ground_access],
+            "ticket_provider": self.ticket_provider,
+            "queried_at": self.queried_at.isoformat() if self.queried_at else None,
+            "evidence_status": self.evidence_status.value,
+            "rank": self.rank,
+            "ranking_reason": self.ranking_reason,
+            "known_ground_cost_cny": self.known_ground_cost_cny,
+            "total_known_cost_cny": self.total_known_cost_cny,
+            "total_duration_minutes": self.total_duration_minutes,
+            "transfer_count": self.transfer_count,
+        }
+
+
+@dataclass(frozen=True)
+class WeatherRisk:
+    location: str
+    source: str = "qweather"
+    observed_at: datetime | None = None
+    forecast_at: datetime | None = None
+    precipitation_probability: int | None = None
+    precipitation_mm: float | None = None
+    wind_kph: float | None = None
+    visibility_km: float | None = None
+    alert_summary: str | None = None
+    sunrise_at: datetime | None = None
+    sunset_at: datetime | None = None
+    risk_level: RiskLevel = RiskLevel.STABLE
+    recommendation: str | None = None
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "WeatherRisk":
+        probability = _optional_integer(
+            value.get("precipitation_probability"), field_name="precipitation_probability"
+        )
+        if probability is not None and probability > 100:
+            raise ValueError("precipitation_probability must be at most 100")
+        return cls(
+            location=_required_text(value.get("location"), field_name="location"),
+            source=_required_text(value.get("source", "qweather"), field_name="source"),
+            observed_at=_datetime(value.get("observed_at"), field_name="observed_at"),
+            forecast_at=_datetime(value.get("forecast_at"), field_name="forecast_at"),
+            precipitation_probability=probability,
+            precipitation_mm=_money(value.get("precipitation_mm"), field_name="precipitation_mm"),
+            wind_kph=_money(value.get("wind_kph"), field_name="wind_kph"),
+            visibility_km=_money(value.get("visibility_km"), field_name="visibility_km"),
+            alert_summary=_optional_text(value.get("alert_summary")),
+            sunrise_at=_datetime(value.get("sunrise_at"), field_name="sunrise_at"),
+            sunset_at=_datetime(value.get("sunset_at"), field_name="sunset_at"),
+            risk_level=_enum(
+                value.get("risk_level"), RiskLevel, field_name="risk_level", default=RiskLevel.STABLE
+            ),
+            recommendation=_optional_text(value.get("recommendation")),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        for key in ("observed_at", "forecast_at", "sunrise_at", "sunset_at"):
+            value = payload[key]
+            payload[key] = value.isoformat() if value else None
+        payload["risk_level"] = self.risk_level.value
+        return payload
+
+
+@dataclass(frozen=True)
+class PlaceEvidence:
+    place_id: str
+    name: str
+    category: str | None = None
+    address: str | None = None
+    opening_status: str | None = None
+    access_options: tuple[GroundAccessOption, ...] = field(default_factory=tuple)
+    weather_risk: WeatherRisk | None = None
+    source: str | None = None
+    queried_at: datetime | None = None
+    evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+    rank: int | None = None
+    ranking_reason: str | None = None
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "PlaceEvidence":
+        raw_access = value.get("access_options", ())
+        if not isinstance(raw_access, (list, tuple)):
+            raise ValueError("access_options must be a JSON array")
+        raw_weather = value.get("weather_risk")
+        if raw_weather is not None and not isinstance(raw_weather, Mapping):
+            raise ValueError("weather_risk must be a JSON object")
+        return cls(
+            place_id=_required_text(value.get("place_id"), field_name="place_id"),
+            name=_required_text(value.get("name"), field_name="name"),
+            category=_optional_text(value.get("category")),
+            address=_optional_text(value.get("address")),
+            opening_status=_optional_text(value.get("opening_status")),
+            access_options=tuple(GroundAccessOption.from_mapping(item) for item in raw_access),
+            weather_risk=WeatherRisk.from_mapping(raw_weather) if raw_weather is not None else None,
+            source=_optional_text(value.get("source")),
+            queried_at=_datetime(value.get("queried_at"), field_name="queried_at"),
+            evidence_status=_enum(
+                value.get("evidence_status"),
+                EvidenceStatus,
+                field_name="evidence_status",
+                default=EvidenceStatus.PARTIAL,
+            ),
+            rank=_optional_integer(value.get("rank"), field_name="rank", minimum=1),
+            ranking_reason=_optional_text(value.get("ranking_reason")),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "place_id": self.place_id,
+            "name": self.name,
+            "category": self.category,
+            "address": self.address,
+            "opening_status": self.opening_status,
+            "access_options": [item.to_dict() for item in self.access_options],
+            "weather_risk": self.weather_risk.to_dict() if self.weather_risk else None,
+            "source": self.source,
+            "queried_at": self.queried_at.isoformat() if self.queried_at else None,
+            "evidence_status": self.evidence_status.value,
+            "rank": self.rank,
+            "ranking_reason": self.ranking_reason,
+        }
+
+
+@dataclass(frozen=True)
+class ProviderHealthRecord:
+    provider: str
+    status: ProviderHealth
+    required: bool = False
+    capabilities: tuple[str, ...] = field(default_factory=tuple)
+    checked_at: datetime | None = None
+    check: str | None = None
+    remediation: str | None = None
+
+    @classmethod
+    def from_mapping(cls, value: Mapping[str, Any]) -> "ProviderHealthRecord":
+        return cls(
+            provider=_required_text(value.get("provider"), field_name="provider"),
+            status=_enum(value.get("status"), ProviderHealth, field_name="status", default=ProviderHealth.UNKNOWN),
+            required=_boolean(value.get("required"), field_name="required"),
+            capabilities=_text_tuple(value.get("capabilities"), field_name="capabilities"),
+            checked_at=_datetime(value.get("checked_at"), field_name="checked_at"),
+            check=_optional_text(value.get("check")),
+            remediation=_optional_text(value.get("remediation")),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "provider": self.provider,
+            "status": self.status.value,
+            "required": self.required,
+            "capabilities": list(self.capabilities),
+            "checked_at": self.checked_at.isoformat() if self.checked_at else None,
+            "check": self.check,
+            "remediation": self.remediation,
+        }

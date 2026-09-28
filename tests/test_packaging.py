@@ -33,9 +33,9 @@ class PackagingTests(unittest.TestCase):
         pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")
         init_text = (PLUGIN / "src" / "china_travel_assistant" / "__init__.py").read_text(encoding="utf-8")
 
-        self.assertEqual(manifest["version"], "0.2.0")
-        self.assertRegex(pyproject, r'(?m)^version = "0\.2\.0"$')
-        self.assertIn('__version__ = "0.2.0"', init_text)
+        self.assertEqual(manifest["version"], "0.3.0")
+        self.assertRegex(pyproject, r'(?m)^version = "0\.3\.0"$')
+        self.assertIn('__version__ = "0.3.0"', init_text)
 
     def test_mcp_config_pins_12306_and_variflight_versions(self):
         config = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
@@ -53,6 +53,11 @@ class PackagingTests(unittest.TestCase):
             "AMAP_SECURITY_CODE",
             "FLYAI_API_KEY",
             "VARIFLIGHT_API_KEY",
+            "QWEATHER_API_HOST",
+            "QWEATHER_KEY_ID",
+            "QWEATHER_DEVELOPER_ID",
+            "QWEATHER_PROJECT_ID",
+            "QWEATHER_PRIVATE_KEY_PATH",
             "VIGOLIVE_API_KEY",
         }
         present = set(re.findall(r"^([A-Z][A-Z0-9_]+)=", template, re.MULTILINE))
@@ -91,11 +96,12 @@ class PackagingTests(unittest.TestCase):
         script = (ROOT / "scripts" / "install-local.sh").read_text(encoding="utf-8")
 
         self.assertIn("python3 -m pipx", script)
-        self.assertIn('npm install -g --prefix "$HOME/.local"', script)
-        self.assertIn("@fly-ai/flyai-cli@1.0.16", script)
-        self.assertIn("command -v uvx", script)
-        self.assertIn("command -v ego-browser", script)
-        self.assertIn("1.2.3", script)
+        self.assertIn("Python 3.10+", script)
+        self.assertNotIn("command -v uvx", script)
+        self.assertNotIn("command -v ego-browser", script)
+        optional = (ROOT / "scripts" / "install-optional.sh").read_text(encoding="utf-8")
+        self.assertIn('npm install -g --prefix "$HOME/.local"', optional)
+        self.assertIn("@fly-ai/flyai-cli@1.0.16", optional)
 
     def test_ci_uses_live_github_actions_expressions(self):
         workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
@@ -105,26 +111,29 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("${{ secrets.GITHUB_TOKEN }}", workflow)
         self.assertIn("ruff check", workflow)
         self.assertIn("pip wheel", workflow)
+        self.assertIn("python scripts/validate-plugin.py", workflow)
+        self.assertIn("python scripts/build-release.py", workflow)
+        self.assertIn('node-version: "22"', workflow)
 
     def test_release_workflow_builds_checksumed_plugin_and_wheel(self):
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
 
         self.assertIn('tags:\n      - "v*"', workflow)
-        self.assertIn("python -m build --wheel", workflow)
-        self.assertIn("china-travel-assistant-plugin-${GITHUB_REF_NAME}.zip", workflow)
-        self.assertIn('"*/build/*"', workflow)
+        self.assertIn('python scripts/build-release.py --version "${GITHUB_REF_NAME#v}"', workflow)
+        self.assertNotIn("zip -r", workflow)
         self.assertIn("SHA256SUMS", workflow)
         self.assertIn("gh release create", workflow)
         self.assertIn("--verify-tag", workflow)
+        self.assertIn('notes_file=".github/release-notes/${GITHUB_REF_NAME}.md"', workflow)
         self.assertNotIn(r"\${{", workflow)
 
     def test_release_notes_and_changelog_name_the_skill_release(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        notes = (ROOT / ".github" / "release-notes" / "v0.2.0.md").read_text(encoding="utf-8")
+        notes = (ROOT / ".github" / "release-notes" / "v0.3.0.md").read_text(encoding="utf-8")
 
-        self.assertIn("## [0.2.0] - 2026-08-27", changelog)
+        self.assertIn("## [0.3.0] - 2026-09-28", changelog)
         self.assertIn("eight-Skill Agent Plugin", notes)
-        self.assertIn("天枢 TravelOS", notes)
+        self.assertIn("远行计划局", notes)
 
     def test_python_distribution_includes_publication_notices(self):
         pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")
@@ -161,9 +170,9 @@ class PackagingTests(unittest.TestCase):
                 text=True,
                 env=base_env,
             )
-            variflight = subprocess.run(
+            no_profile = subprocess.run(
                 [str(launcher), "variflight", "env"],
-                check=True,
+                check=False,
                 capture_output=True,
                 text=True,
                 env=base_env,
@@ -178,9 +187,9 @@ class PackagingTests(unittest.TestCase):
 
         for secret in ("amap-test", "fly-test", "vari-test"):
             self.assertNotIn(secret, rail.stdout)
-        self.assertNotIn("amap-test", variflight.stdout)
-        self.assertNotIn("fly-test", variflight.stdout)
-        self.assertIn("VARIFLIGHT_API_KEY=vari-test", variflight.stdout)
+        self.assertNotIn("amap-test", no_profile.stdout)
+        self.assertNotEqual(no_profile.returncode, 0)
+        self.assertNotIn("vari-test", no_profile.stdout + no_profile.stderr)
         self.assertIn("VARIFLIGHT_API_KEY=env-test", environment_override.stdout)
         self.assertNotIn("VARIFLIGHT_API_KEY=vari-test", environment_override.stdout)
 

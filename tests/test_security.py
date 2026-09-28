@@ -30,7 +30,7 @@ class SecurityTests(unittest.TestCase):
         secret_patterns = (
             re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
             re.compile(
-                r"(?i)(?:AMAP_[A-Z0-9_]*|VARIFLIGHT_API_KEY|FLYAI_API_KEY|VIGOLIVE_API_KEY)"
+                r"(?i)(?:AMAP_[A-Z0-9_]*|VARIFLIGHT_API_KEY|FLYAI_API_KEY|QWEATHER_[A-Z0-9_]*|VIGOLIVE_API_KEY)"
                 r"[ \t]*[=:][ \t]*['\"]?[A-Za-z0-9_-]{16,}"
             ),
         )

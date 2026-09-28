@@ -1,6 +1,6 @@
 ---
 name: plan-china-transfers
-description: Plan China airport, railway-station, metro, bus, taxi, walking, and last-mile transfers using AMap POI and route data. Use when the user asks how to connect transport legs, compare transfer cost and time, find stations or airports, or plan urban transit.
+description: Plan China airport, station, metro, bus, taxi, walking, and last-mile access using AMap POI and route facts. Use when the user asks for ground access or urban transit, or when a full itinerary needs transfer facts. Do not use for flight fares, rail tickets, hotel inventory, or webpage-only verification; do not compose the full trip here.
 ---
 
 # Plan China Transfers
@@ -15,6 +15,7 @@ Use the official AMap Web Service or registered AMap MCP through the project ada
 4. Query the requested modes, normally public transit first, then walking, taxi/driving, or airport bus when relevant.
 5. Add a visible buffer for security, exit, luggage, station transfer, and boarding constraints. The buffer is not part of provider duration; represent it in `TransferLeg.buffer_minutes`.
 6. Keep successful independent legs when one route fails. Mark the overall result partial and identify the failed leg.
+7. When an itinerary may fly, return reusable gateway-access facts for every viable airport or rail gateway found. Include only reported fare and duration values; an unavailable fare remains unknown and does not disqualify the candidate.
 
 For each leg return origin, destination, mode, distance, provider duration, buffer, total planning duration, fare, transfers, source, query time, and map link. Distinguish provider-reported fare from a user-entered estimate.
 

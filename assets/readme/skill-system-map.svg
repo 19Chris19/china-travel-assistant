@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
-  <title id="title">天枢 TravelOS 八 Skill 系统图</title>
-  <desc id="desc">自然语言需求进入 plan-china-trip，由父 Skill 编排航班、火车、接驳、酒店、网页核验、OmniRoute 路线推演和精确展示七个专业 Skill。</desc>
+  <title id="title">远行计划局八 Skill 系统图</title>
+  <desc id="desc">自然语言需求进入 plan-china-trip，由父 Skill 编排航班、火车、接驳、酒店、网页核验、路线推演和精确展示七个专业 Skill。</desc>
   <defs>
     <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#F43F5E"/></marker>
     <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#38BDF8"/></marker>
@@ -23,7 +23,7 @@
   <rect x="364" y="308" width="174" height="38" rx="4" fill="#F43F5E"/>
   <text x="451" y="334" text-anchor="middle" fill="#FFFFFF" font-size="20" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">ORCHESTRATOR</text>
   <text x="364" y="402" fill="#F8FAFC" font-size="29" font-weight="700" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">$plan-china-trip</text>
-  <text x="364" y="444" fill="#94A3B8" font-size="23" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">Auto 偏 Pro · 证据合并 · 硬约束</text>
+  <text x="364" y="444" fill="#94A3B8" font-size="23" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif">智能选择偏拓界 · 证据合并 · 硬约束</text>
 
   <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace">
     <rect x="758" y="94" width="400" height="72" rx="6" fill="#111827" stroke="#334155" stroke-width="2"/>

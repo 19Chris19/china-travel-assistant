@@ -1,4 +1,4 @@
 interface:
   display_name: "精确行程展示 Skill"
-  short_description: "Visualize 优先，将同一事实源生成交互行程板或本地 HTML/SVG"
-  default_prompt: "Use $present-china-trip to present the validated itinerary.json with Visualize first, then deterministic local HTML/SVG or complete Markdown, preserving every factual field exactly."
+  short_description: "Visualize 优先，带安全数据健康条的精确行程展示"
+  default_prompt: "Use $present-china-trip to present validated itinerary.json with Visualize first, then deterministic local HTML/SVG or complete Markdown, preserving every factual field and showing only relevant safe provider health."

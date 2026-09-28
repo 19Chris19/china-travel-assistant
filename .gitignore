@@ -9,3 +9,4 @@ build/
 dist/
 credentials.env
 config.local.*
+node_modules/

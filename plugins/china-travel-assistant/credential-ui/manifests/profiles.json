@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "profiles": {
+    "amap": [{"manifest": "default.json", "env": "AMAP_WEBSERVICE_KEY"}],
+    "flyai": [{"manifest": "flyai.json", "env": "FLYAI_API_KEY"}],
+    "variflight": [{"manifest": "variflight.json", "env": "VARIFLIGHT_API_KEY"}]
+  }
+}

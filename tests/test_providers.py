@@ -44,6 +44,12 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual([item.provider for item in transfer], ["amap"])
         self.assertTrue(transfer[0].required)
 
+    def test_weather_is_an_optional_qweather_enrichment(self):
+        weather = build_provider_plan("weather")
+
+        self.assertEqual([(item.provider, item.action) for item in weather], [("qweather", ProviderAction.SEARCH)])
+        self.assertFalse(weather[0].required)
+
     def test_error_classification_is_stable(self):
         cases = {
             401: "expired",
