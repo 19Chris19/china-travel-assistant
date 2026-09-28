@@ -1,6 +1,6 @@
 # TianShu TravelOS China Travel Agent Skill Plugin
 
-An eight-Skill Codex Plugin for evidence-backed China travel planning. The parent `$plan-china-trip` Agent Skill routes flight, train, hotel, transfer, web-verification, OmniRoute exploration, and exact presentation Skills.
+An eight-Skill Codex Plugin for evidence-backed China travel planning. The parent `$plan-china-trip` Agent Skill routes generic gateway discovery, flight, train, hotel, transfer, optional weather risk, web verification, OmniRoute exploration, and exact presentation Skills.
 
 Auto defaults to Pro exploration, while Pro Max requires explicit opt-in. Every tier retains student fares, luggage, accommodation, taxes, transfers, refund rules, fatigue, and time-window checks.
 

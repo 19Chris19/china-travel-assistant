@@ -1,7 +1,7 @@
 {
   "name": "china-travel-assistant",
-  "version": "0.2.0",
-  "description": "Agent-invoked China travel Skill Plugin with OmniRoute exploration and exact visual itineraries.",
+  "version": "0.3.0",
+  "description": "Agent-invoked China travel Skill Plugin with generic gateway ranking, place facts, health, and exact visual itineraries.",
   "author": {
     "name": "19Chris19",
     "url": "https://github.com/19Chris19"
@@ -15,13 +15,13 @@
   "interface": {
     "displayName": "TianShu TravelOS Agent Skill",
     "shortDescription": "Eight Agent Skills for exact and imaginative China travel planning.",
-    "longDescription": "Use eight Agent Skills to compare domestic flights, China Railway services, hotels and transfers, explore unconventional OmniRoute combinations, verify pages through Ego Browser, and present exact facts through Visualize or local artifacts.",
+    "longDescription": "Use eight Agent Skills to compare domestic flights, China Railway services, hotels and transfers, rank generic reachable gateways from explicit door-to-door facts, assess optional outdoor risk, verify pages through Ego Browser, and present exact facts through Visualize or local artifacts.",
     "developerName": "19Chris19",
     "category": "Productivity",
     "capabilities": ["Search", "Interactive"],
     "defaultPrompt": [
       "Use the China travel Agent Skills to compare total cost, time, fatigue, risk, and evidence.",
-      "Explore a Pro flight-train route while keeping a stable baseline.",
+      "Explore a Pro route while comparing generic reachable gateways and keeping a stable baseline.",
       "Present the validated itinerary with Visualize or an exact local HTML fallback."
     ]
   }

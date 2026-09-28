@@ -7,7 +7,6 @@ from china_travel_assistant.contracts import (
     ExplorationPolicy,
     ExplorationTier,
     GatewayCandidate,
-    GroundAccessOption,
     ItineraryCandidate,
     ItineraryLeg,
     PlaceEvidence,

@@ -33,9 +33,9 @@ class PackagingTests(unittest.TestCase):
         pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")
         init_text = (PLUGIN / "src" / "china_travel_assistant" / "__init__.py").read_text(encoding="utf-8")
 
-        self.assertEqual(manifest["version"], "0.2.0")
-        self.assertRegex(pyproject, r'(?m)^version = "0\.2\.0"$')
-        self.assertIn('__version__ = "0.2.0"', init_text)
+        self.assertEqual(manifest["version"], "0.3.0")
+        self.assertRegex(pyproject, r'(?m)^version = "0\.3\.0"$')
+        self.assertIn('__version__ = "0.3.0"', init_text)
 
     def test_mcp_config_pins_12306_and_variflight_versions(self):
         config = json.loads((PLUGIN / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
@@ -121,13 +121,14 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("SHA256SUMS", workflow)
         self.assertIn("gh release create", workflow)
         self.assertIn("--verify-tag", workflow)
+        self.assertIn('notes_file=".github/release-notes/${GITHUB_REF_NAME}.md"', workflow)
         self.assertNotIn(r"\${{", workflow)
 
     def test_release_notes_and_changelog_name_the_skill_release(self):
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        notes = (ROOT / ".github" / "release-notes" / "v0.2.0.md").read_text(encoding="utf-8")
+        notes = (ROOT / ".github" / "release-notes" / "v0.3.0.md").read_text(encoding="utf-8")
 
-        self.assertIn("## [0.2.0] - 2026-08-27", changelog)
+        self.assertIn("## [0.3.0] - 2026-09-28", changelog)
         self.assertIn("eight-Skill Agent Plugin", notes)
         self.assertIn("天枢 TravelOS", notes)
 
