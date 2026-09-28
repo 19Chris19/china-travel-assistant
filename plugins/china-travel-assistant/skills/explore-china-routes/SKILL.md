@@ -1,6 +1,6 @@
 ---
 name: explore-china-routes
-description: Explore and validate imaginative China domestic multimodal routes with the deterministic OmniRoute engine. Use when an Agent needs alternatives beyond conventional travel-app recommendations, including flight-train, train-flight, nearby airports, corridor hubs, split tickets, overnight routes, or explicit Standard, Pro, and Pro Max exploration.
+description: Explore and validate unconventional domestic multimodal routes with the deterministic route exploration engine, using normalized provider facts and a stable baseline. Use when flight, rail, and access facts already exist and the user wants more imaginative alternatives. Do not use to fetch raw fares, inspect webpages, find hotels, or render a final board; delegate those tasks to domain or presentation Skills.
 ---
 
 # Explore China Routes

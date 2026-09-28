@@ -1,6 +1,6 @@
 ---
 name: plan-china-trip
-description: Orchestrate the China Travel Assistant Agent Skills for domestic flights, trains, hotels, maps, transfers, OmniRoute exploration, budgets, and evidence-backed presentation. Use when the user asks to plan or compare a China trip, discover unconventional multimodal combinations, connect airports or stations, optimize cost versus time or fatigue, or turn travel constraints into an executable itinerary.
+description: Orchestrate the 远行计划局 China travel Agent Skills into a complete evidence-backed trip, comparing transport, access, hotels, cost, fatigue, and risks. Use when the user asks for an end-to-end itinerary or several transport modes together. Do not use for a single isolated flight, train, hotel, transfer, webpage fact, or rendering request; route those to the domain Skill.
 ---
 
 # Plan China Trip
@@ -12,7 +12,7 @@ Use this as the orchestration Skill. Keep provider calls separate from planning 
 1. Normalize the request into `TravelRequest`. Resolve relative dates using the current China Standard Time date and show the final dates.
 2. Extract hard constraints: origin, destination, dates, travelers, budget, luggage, student-fare eligibility, arrival/departure windows, fatigue tolerance, and required airline or transport mode.
 3. Ask only for missing facts that can change the recommendation. If the user delegates a choice, state conservative defaults and continue.
-4. Resolve `exploration_tier`. Default `auto` to Pro; converge to Standard for direct-only, explicitly stable-risk, or rigid arrival constraints. Never enable Pro Max without an explicit user choice.
+4. Resolve `exploration_tier`. Default `auto` (智能选择) to 拓界 (`pro`); converge to 从容 (`standard`) for direct-only, explicitly stable-risk, or rigid arrival constraints. Never enable 远征 (`pro_max`) without an explicit user choice.
 5. For any flight-capable request, first ask `$plan-china-transfers` to discover generic reachable gateways. Then query each viable gateway through `$search-china-flights` and collect door-to-door ground access. Do not hard-code a city, airport, or personal historical preference.
 6. Build verified candidate legs through `$search-china-flights`, `$search-china-trains`, `$search-china-hotels`, and `$plan-china-transfers`.
 7. Invoke `$explore-china-routes` with the normalized request and candidate legs. Always keep a stable conventional baseline, then add only combinations that pass hard constraints and transfer buffers.

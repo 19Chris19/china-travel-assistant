@@ -1,6 +1,6 @@
 ---
 name: present-china-trip
-description: Present a validated China travel itinerary as an exact, evidence-backed visual experience. Use when an Agent should turn itinerary.json into a Visualize-first route board, deterministic local HTML or SVG, or complete Markdown without changing times, prices, train or flight numbers, risk labels, evidence, or booking links.
+description: Present an already validated China itinerary from itinerary.json as a Visualize-first route board or exact local HTML, SVG, or Markdown. Use when a trip is already planned and the user requests a visual itinerary. Do not use for provider searches, missing-fact inference, route composition, or ImageGen-written itinerary data.
 ---
 
 # Present China Trip

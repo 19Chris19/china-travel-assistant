@@ -1,6 +1,6 @@
 ---
 name: plan-china-transfers
-description: Plan China airport, railway-station, metro, bus, taxi, walking, and last-mile transfers using AMap POI and route data. Use when the user asks how to connect transport legs, compare transfer cost and time, find stations or airports, or plan urban transit.
+description: Plan China airport, station, metro, bus, taxi, walking, and last-mile access using AMap POI and route facts. Use when the user asks for ground access or urban transit, or when a full itinerary needs transfer facts. Do not use for flight fares, rail tickets, hotel inventory, or webpage-only verification; do not compose the full trip here.
 ---
 
 # Plan China Transfers

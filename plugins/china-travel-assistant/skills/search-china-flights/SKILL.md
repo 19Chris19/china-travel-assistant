@@ -1,6 +1,6 @@
 ---
 name: search-china-flights
-description: Search and compare mainland-China flights, nearby airports, fares, taxes, schedules, baggage, and booking links. Use when the user asks about domestic airfare, low prices, airline or date comparisons, flight status, or multimodal flight-plus-train options.
+description: Search mainland-China flight fares, schedules, nearby airports, baggage, tax, status, and booking links with FlyAI and optional Variflight verification. Use when the user asks about flights, or when a full itinerary needs flight facts. Do not use for rail-only, hotel-only, local transit-only, or webpage-only requests; do not compose the complete trip here.
 ---
 
 # Search China Flights

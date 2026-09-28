@@ -1,6 +1,6 @@
 ---
 name: search-china-trains
-description: Search China Railway train schedules, seats, fares, direct routes, and transfers through the 12306 MCP. Use when the user asks for train tickets, high-speed rail, station connections, or a rail alternative; never submit a purchase or payment.
+description: Search China Railway schedules, seats, fares, direct trains, and transfers through 12306 MCP. Use when the user asks about trains, or when a full itinerary needs rail facts. Do not use for flight-only, hotel-only, urban transit-only, or webpage-only requests; do not submit purchase or payment.
 ---
 
 # Search China Trains
