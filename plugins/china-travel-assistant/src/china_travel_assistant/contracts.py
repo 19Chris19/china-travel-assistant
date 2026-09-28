@@ -35,6 +35,28 @@ class RiskLevel(str, Enum):
     CHALLENGE = "challenge"
 
 
+TIER_ALIASES = {
+    "智能选择": ExplorationTier.AUTO,
+    "从容": ExplorationTier.STANDARD,
+    "拓界": ExplorationTier.PRO,
+    "远征": ExplorationTier.PRO_MAX,
+}
+TIER_LABELS = {
+    ExplorationTier.AUTO.value: "智能选择",
+    ExplorationTier.STANDARD.value: "从容",
+    ExplorationTier.PRO.value: "拓界",
+    ExplorationTier.PRO_MAX.value: "远征",
+}
+RISK_LABELS = {"stable": "稳妥", "managed": "可控", "challenge": "挑战"}
+
+
+def parse_tier(value: Any) -> ExplorationTier:
+    normalized = str(value).strip().casefold()
+    if normalized in TIER_ALIASES:
+        return TIER_ALIASES[normalized]
+    return ExplorationTier(normalized)
+
+
 class EvidenceStatus(str, Enum):
     VERIFIED = "verified"
     PARTIAL = "partial"
@@ -159,6 +181,11 @@ def _enum(value: Any, enum_type: type[Enum], *, field_name: str, default: Enum) 
         return default
     if isinstance(value, enum_type):
         return value
+    if enum_type is ExplorationTier:
+        try:
+            return parse_tier(value)
+        except ValueError:
+            pass
     try:
         return enum_type(str(value).strip().casefold())
     except ValueError as exc:

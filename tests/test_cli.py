@@ -9,6 +9,13 @@ from china_travel_assistant.cli import main
 
 
 class CliTests(unittest.TestCase):
+    def test_plan_cli_accepts_chinese_tier_alias(self):
+        payload = {"request": {"origin": "沈阳", "destination": "苏州", "date_start": "2026-08-31"}}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(main(["plan", json.dumps(payload, ensure_ascii=False), "--tier", "从容"]), 0)
+        self.assertEqual(json.loads(output.getvalue())["resolved_tier"], "standard")
+
     def test_plan_emits_resolved_tier_search_plan_and_itineraries(self):
         stdout = io.StringIO()
         stderr = io.StringIO()

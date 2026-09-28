@@ -4,10 +4,19 @@ from html import escape
 from typing import Any, Mapping
 from urllib.parse import urlsplit
 
-from .contracts import PresentationMode
+from .contracts import PresentationMode, RISK_LABELS, TIER_LABELS
 
 
 UNKNOWN = "未返回"
+BRAND = "远行计划局"
+
+
+def _tier_label(value: Any) -> str:
+    return TIER_LABELS.get(value, _text(value))
+
+
+def _risk_label(value: Any) -> str:
+    return RISK_LABELS.get(value, _text(value))
 _CREDENTIALS_URL = (
     "https://github.com/19Chris19/china-travel-assistant/blob/main/"
     "plugins/china-travel-assistant/references/credentials.md"
@@ -202,7 +211,7 @@ def render_html(plan: Mapping[str, Any]) -> str:
         labels = []
         if item.get("is_baseline"):
             labels.append('<span class="badge baseline">稳妥基准</span>')
-        labels.append(f'<span class="badge risk-{_html(item.get("risk_level"))}">风险 {_html(item.get("risk_level"))}</span>')
+        labels.append(f'<span class="badge risk-{_html(item.get("risk_level"))}">风险 {_html(_risk_label(item.get("risk_level")))}</span>')
         labels.append(f'<span class="badge">证据 {_html(item.get("evidence_status"))}</span>')
         unknowns = item.get("unknown_fields") or []
         facts = "".join(
@@ -235,7 +244,7 @@ def render_html(plan: Mapping[str, Any]) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>天枢 TravelOS · {_html(route_label)}</title>
+  <title>{BRAND} · {_html(route_label)}</title>
   <style>
     :root {{ color-scheme: light dark; --bg:#f4f1e8; --panel:#fffdf6; --ink:#17213b; --muted:#64708a; --line:#d8d1bf; --red:#db3434; --teal:#007d82; --shadow:0 18px 45px #17213b18; }}
     @media (prefers-color-scheme:dark) {{ :root {{ --bg:#10141d; --panel:#171d28; --ink:#f5f0e5; --muted:#a8b2c8; --line:#30394a; --red:#ff5a55; --teal:#27d2c3; --shadow:0 18px 45px #0007; }} }}
@@ -262,9 +271,9 @@ def render_html(plan: Mapping[str, Any]) -> str:
 </head>
 <body><main>
   <header>
-    <p>天枢 TravelOS · Agent Skill 行程板</p>
+    <p>{BRAND} · Agent Skill 行程板</p>
     <h1>{_html(route_label)}</h1>
-    <p class="tier">{_html(plan.get("resolved_tier"))} · {_html(request.get("date_start"))}</p>
+    <p class="tier">{_html(_tier_label(plan.get("resolved_tier")))} · {_html(request.get("date_start"))}</p>
   </header>
   {health}
   {context_facts}
@@ -295,17 +304,17 @@ def render_svg(plan: Mapping[str, Any]) -> str:
             f'<g transform="translate(60 {y})">'
             f'<circle cx="10" cy="10" r="8" fill="{node_color}"/>'
             f'<text x="38" y="15" class="route">{_html(item.get("title"))}{_html(baseline)}</text>'
-            f'<text x="38" y="43" class="meta">{_html(_money(item.get("total_price_cny")))} · {_html(_duration(item.get("total_duration_minutes")))} · 风险 {_html(item.get("risk_level"))} · 证据 {_html(item.get("evidence_status"))}</text>'
+            f'<text x="38" y="43" class="meta">{_html(_money(item.get("total_price_cny")))} · {_html(_duration(item.get("total_duration_minutes")))} · 风险 {_html(_risk_label(item.get("risk_level")))} · 证据 {_html(item.get("evidence_status"))}</text>'
             f'<text x="38" y="70" class="meta">{_html(item.get("benefit_summary"))} · {_html(item.get("burden_summary"))}</text>'
             '</g>'
         )
     return f"""<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" viewBox="0 0 1200 {height}">
-<title id="title">天枢 TravelOS {_html(route_label)} 行程</title>
+<title id="title">{BRAND} {_html(route_label)} 行程</title>
 <desc id="desc">由 itinerary.json 确定性生成的路线摘要</desc>
 <style>.bg{{fill:#f4f1e8}}.ink{{fill:#17213b}}.muted{{fill:#64708a}}.title{{font:700 58px sans-serif}}.label{{font:700 22px sans-serif;fill:#007d82}}.route{{font:700 22px sans-serif;fill:#17213b}}.meta{{font:17px sans-serif;fill:#64708a}}</style>
 <rect class="bg" width="1200" height="{height}" rx="30"/>
 <rect x="55" y="50" width="8" height="94" rx="4" fill="#db3434"/>
-<text x="86" y="86" class="label">天枢 TravelOS · {_html(plan.get("resolved_tier"))}</text>
+<text x="86" y="86" class="label">{BRAND} · {_html(_tier_label(plan.get("resolved_tier")))}</text>
 <text x="86" y="137" class="title">{_html(route_label)}</text>
 <text x="86" y="166" class="meta">{_html(health_summary)} · {_html(health_text)}</text>
 {''.join(rows)}
@@ -320,9 +329,9 @@ def render_markdown(plan: Mapping[str, Any]) -> str:
     health_records = _health_records(plan, itineraries)
     health_summary, health_cta = _health_summary(health_records)
     lines = [
-        f"# 天枢 TravelOS: {_text(request.get('origin'))} -> {_text(request.get('destination'))}",
+        f"# {BRAND}: {_text(request.get('origin'))} -> {_text(request.get('destination'))}",
         "",
-        f"- 探索档位: `{_text(plan.get('resolved_tier'))}`",
+        f"- 探索档位: {_tier_label(plan.get('resolved_tier'))} (`{_text(plan.get('resolved_tier'))}`)",
         f"- 出发日期: `{_text(request.get('date_start'))}`",
         "- 事实源: `itinerary.json`",
         f"- {health_summary}",
@@ -338,7 +347,7 @@ def render_markdown(plan: Mapping[str, Any]) -> str:
                 "",
                 f"## {_text(item.get('title'))}{baseline}",
                 "",
-                f"总价: {_money(item.get('total_price_cny'))}; 总耗时: {_duration(item.get('total_duration_minutes'))}; 风险: {_text(item.get('risk_level'))}; 证据: {_text(item.get('evidence_status'))}",
+                f"总价: {_money(item.get('total_price_cny'))}; 总耗时: {_duration(item.get('total_duration_minutes'))}; 风险: {_risk_label(item.get('risk_level'))}; 证据: {_text(item.get('evidence_status'))}",
                 "",
                 f"相对收益: {_text(item.get('benefit_summary'))}",
                 "",

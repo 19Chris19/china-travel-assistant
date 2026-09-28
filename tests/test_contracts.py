@@ -23,6 +23,15 @@ from china_travel_assistant.contracts import (
 
 
 class ContractTests(unittest.TestCase):
+    def test_chinese_tier_aliases_preserve_canonical_contract(self):
+        expected = {"智能选择": "auto", "从容": "standard", "拓界": "pro", "远征": "pro_max"}
+        for label, canonical in expected.items():
+            with self.subTest(label=label):
+                request = TravelRequest.from_mapping({
+                    "origin": "沈阳", "destination": "苏州", "date_start": "2026-08-31", "tier": label,
+                })
+                self.assertEqual(request.to_dict()["exploration_tier"], canonical)
+
     def test_request_defaults_to_auto_and_preserves_shared_capabilities(self):
         request = TravelRequest.from_mapping(
             {

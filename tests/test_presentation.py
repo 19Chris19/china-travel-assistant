@@ -86,7 +86,7 @@ class PresentationTests(unittest.TestCase):
 
         self.assertEqual(mode, PresentationMode.MARKDOWN)
         self.assertIn("https://www.12306.cn/index/", rendered)
-        self.assertIn("风险: stable", rendered)
+        self.assertIn("风险: 稳妥", rendered)
         self.assertIn("事实源: `itinerary.json`", rendered)
 
     def test_auto_local_fallback_is_html_and_visualize_requires_host(self):

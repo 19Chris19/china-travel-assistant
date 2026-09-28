@@ -2,7 +2,7 @@
   <img src="./assets/readme/china-travel-assistant.gif" width="100%" alt="中国出行助手：航班、铁路、酒店和城市接驳组成的一段动态联程路线">
 </p>
 
-<h1 align="center">天枢 TravelOS · 中国出行助手 Agent Skill</h1>
+<h1 align="center">远行计划局 · 中国出行 Agent Skill</h1>
 
 <p align="center">
   面向 Agent 的中国境内出行规划 Skill Plugin：八个可独立调用的 Skills，用对话组合机票、12306 火车票、酒店、高德接驳、通用门户排序、地点事实与传统平台之外的多式联运路线。
@@ -29,7 +29,7 @@
   <img src="./assets/readme/section-quickstart.svg" width="100%" alt="快速开始：从安装到第一次对话">
 </p>
 
-要求 Python 3.10+、`pipx`、Node.js、`uvx`、Codex，以及已安装并可运行的 [Ego Browser](https://github.com/citrolabs/ego-lite)。
+核心安装只要求 Python 3.10+、`pipx` 和 Codex。Node.js 22.18+、npm、`uvx` 与 [Ego Browser](https://github.com/citrolabs/ego-lite) 均为对应能力的可选依赖；缺少时 `doctor` 会说明降级。
 
 ```bash
 git clone https://github.com/19Chris19/china-travel-assistant
@@ -37,10 +37,13 @@ cd china-travel-assistant
 ./scripts/install-local.sh
 ```
 
-安装后完全退出并重启 Codex，使 Plugin 与 MCP 正式重载。然后运行凭据初始化：
+安装后完全退出并重启 Codex，使 Plugin 与 MCP 正式重载。按需安装增强能力并通过本机系统凭据页配置（macOS Keychain 已验证）：
 
 ```bash
-./scripts/setup-credentials.sh
+./scripts/install-optional.sh --flyai
+./scripts/setup-credentials.sh amap
+./scripts/setup-credentials.sh flyai
+./scripts/setup-credentials.sh variflight
 travel-assistant doctor
 ```
 
@@ -48,7 +51,7 @@ travel-assistant doctor
 
 ```text
 使用 $plan-china-trip，帮我比较沈阳到苏州周边机场的低价航班，
-默认用 Auto/Pro 主动探索飞铁联运，把机场接驳、学生票和含税总价一起算清楚。
+默认用智能选择（通常按拓界）主动探索飞铁联运，把机场接驳、学生票和含税总价一起算清楚。
 ```
 
 默认 `doctor` 只检查本地配置、版本、私钥权限和运行时，不发送付费 API 请求；明确同意后才运行 `travel-assistant doctor --live`。它会安全返回 `ready`、`missing`、`expired`、`forbidden`、`rate_limited`、`degraded`、`unknown` 或 `not_required`，绝不回显凭据。
@@ -59,10 +62,10 @@ travel-assistant doctor
   <img src="./assets/readme/section-routing.svg" width="100%" alt="能力路由：一个父 Skill 调度多个执行 Skill">
 </p>
 
-顶部 GIF 展示的是本项目的核心思路：Agent 先分别查询交通和住宿，再由 OmniRoute 把航班、铁路、机场/车站接驳与酒店组合成可比较的行程，最后通过 Visualize 或精确本地文件交付。八个 Skills 可以由父 Skill 自动路由，也可以显式调用：
+顶部 GIF 展示的是本项目的核心思路：Agent 先分别查询交通和住宿，再由路线推演器把航班、铁路、机场/车站接驳与酒店组合成可比较的行程，最后通过 Visualize 或精确本地文件交付。八个 Skills 可以由父 Skill 自动路由，也可以显式调用：
 
 <p align="center">
-  <img src="./assets/readme/skill-system-map.svg" width="100%" alt="八 Skill 系统：自然语言需求进入 plan-china-trip，再路由到供应商查询、OmniRoute 路线推演和精确展示 Skill">
+  <img src="./assets/readme/skill-system-map.svg" width="100%" alt="八 Skill 系统：自然语言需求进入 plan-china-trip，再路由到供应商查询、路线推演和精确展示 Skill">
 </p>
 
 | Skill | 负责什么 | 主数据源 |
@@ -73,20 +76,20 @@ travel-assistant doctor
 | `$plan-china-transfers` | POI 消歧、机场/车站接驳、公交地铁和步行 | 高德 Web Service 适配器 |
 | `$search-china-hotels` | 酒店、房型、登录价、库存和取消条件 | FlyAI/飞猪；Ego Browser 页面核验 |
 | `$verify-travel-web` | 页面证据、登录态交接和用户接管 | Ego Browser |
-| `$explore-china-routes` | OmniRoute 确定性组合、剪枝、风险和基准收益解释 | 已归一化的供应商行程腿 |
+| `$explore-china-routes` | 路线推演器确定性组合、剪枝、风险和基准收益解释 | 已归一化的供应商行程腿 |
 | `$present-china-trip` | Visualize 优先，HTML/SVG/Markdown 精确回退 | 同一份 `itinerary.json` |
 
 租房搜索不在 v0.3 运行时中，相关能力计划在 v2 以原创适配器重新加入。
 
-### Standard / Pro / Pro Max
+### 智能选择 / 从容 / 拓界 / 远征
 
 三档共享同一套高基线能力：学生票、住宿、行李、税费、接驳、退改、疲劳、时间窗、证据和预订链接。档位只改变搜索广度、组合新颖度与可接受折腾程度，不会阉割基础功能。
 
 | 档位 | 如何启用 | 探索风格 | 最高风险预算 |
 | --- | --- | --- | --- |
-| `Standard` | 显式选择；或 Auto 遇到只要直达、明确低风险、刚性到达约束 | 完整核验直达与附近门户，保留稳妥基准 | Stable |
-| `Pro` | 普通请求的 Auto 默认 | 主动探索飞铁、铁飞、周边机场、沿途枢纽和分段票 | Managed |
-| `Pro Max` | 只能由用户显式选择 | 扩展日期、枢纽、夜航与住宿组合，提供挑战路线 | Challenge |
+| `从容` (`standard`) | 显式选择；或智能选择遇到只要直达、明确低风险、刚性到达约束 | 完整核验直达与附近门户，保留稳妥基准 | 稳妥 |
+| `拓界` (`pro`) | 普通请求的智能选择默认 | 主动探索飞铁、铁飞、周边机场、沿途枢纽和分段票 | 可控 |
+| `远征` (`pro_max`) | 只能由用户显式选择 | 扩展日期、枢纽、夜航与住宿组合，提供挑战路线 | 挑战 |
 
 每个非传统方案必须解释相对基准收益、额外折腾、自助换乘、延误兜底、风险和证据。未知费用继续显示“未返回”，不会为了排序而猜一个数字。
 
@@ -103,7 +106,7 @@ travel-assistant doctor
     -> 飞常准按需增强
     -> QWeather 按需评估户外与接驳风险
     -> Ego Browser 仅核验登录价或页面证据
-    -> explore-china-routes 组合与校验 OmniRoute 候选
+    -> explore-china-routes 组合与校验路线候选
     -> present-china-trip 选择 Visualize 或精确本地回退
     -> 输出比较结果、风险与真实平台链接
 ```
@@ -137,10 +140,10 @@ Visualize、HTML、SVG 和 Markdown 全部读取同一份 `itinerary.json`。Ima
 <h2 id="security">配置安全</h2>
 
 <p align="center">
-  <img src="./assets/readme/section-security.svg" width="100%" alt="配置安全：真实 Key 只存放在本地 0600 文件中">
+  <img src="./assets/readme/section-security.svg" width="100%" alt="配置安全：真实 Key 由系统凭据存储，QWeather 私钥留在仓库外">
 </p>
 
-只把真实值写入本机的 `~/.config/china-travel-assistant/credentials.env`，权限必须为 `0600`。不要把 Key 写进命令行参数、MCP URL、README、截图、Issue、HTML 或日志。完整步骤、变量映射和错误分类见 [`credentials.md`](plugins/china-travel-assistant/references/credentials.md)。
+桌面端通过 `scripts/setup-credentials.sh` 打开本机配置页，分别写入系统凭据存储。运行时**不读取旧 `credentials.env`**；旧文件不会自动迁移，请轮换 Key 后重新填写，再自行清理旧文件。只有 CI、容器或无界面场景可显式注入环境变量。QWeather 非敏感参数可放 `settings.env`，私钥文件须在仓库外且权限 `0600`。不要把 Key 写进命令行参数、MCP URL、README、截图、Issue、HTML 或日志。完整步骤见 [`credentials.md`](plugins/china-travel-assistant/references/credentials.md)。
 
 | 提供商 | 官方申请/配置入口 | 变量 | 用途 |
 | --- | --- | --- | --- |
@@ -154,12 +157,12 @@ Visualize、HTML、SVG 和 Markdown 全部读取同一份 `itinerary.json`。Ima
 12306 公共查询不要求 API Key；本项目使用固定提交的 [12306 MCP Fork](https://github.com/19Chris19/mcp-server-12306)。Ego Browser 的登录态由其独立应用管理，不写入本项目凭据文件。
 
 <p align="center">
-  <img src="./assets/readme/credential-boundary.svg" width="100%" alt="凭据边界：本地 credentials.env 可被所需供应商读取，但对话、MCP URL、Issue、日志和 Git 不含 Key">
+  <img src="./assets/readme/credential-boundary.svg" width="100%" alt="凭据边界：系统凭据按供应商最小注入；对话、MCP URL、日志和 Git 不含 Key">
 </p>
 
 ### 给 Codex 的一键部署提示词
 
-将下面整段交给 Codex、Claude Code 或其他支持本地 Agent Skill 的工具。它会先检查环境和文件，再安装；不会索要、回显或提交真实 Key。
+将下面整段交给 Codex。Codex Plugin、MCP 与 Visualize 是本版验证的首发体验；CLI、JSON 契约和 HTML/SVG 输出可移植，但其他 Agent 的直接安装尚未实机验证。
 
 <details>
 <summary>展开部署提示词</summary>
@@ -169,10 +172,10 @@ Visualize、HTML、SVG 和 Markdown 全部读取同一份 `itinerary.json`。Ima
 https://github.com/19Chris19/china-travel-assistant
 
 1. 克隆仓库并阅读 README.md、SECURITY.md、THIRD_PARTY_NOTICES.md、provenance.yml 和 upstream-lock.yml。
-2. 检查 Python 3.10+、pipx、Node.js、npm、uvx、Codex，以及 Ego Browser 是否可用；缺少依赖时只安装公开版本，不读取或打印任何凭据。
+2. 检查 Python 3.10+、pipx 和 Codex；Node.js 22.18+、npm、uvx、FlyAI、飞常准和 Ego Browser 为可选能力，缺少时不要阻塞核心安装。
 3. 运行 ./scripts/install-local.sh。
-4. 运行 ./scripts/setup-credentials.sh，创建 ~/.config/china-travel-assistant/credentials.env，并确认权限为 0600。
-5. 只提示我在本地填写已经轮换过的 AMAP_WEBSERVICE_KEY、AMAP_JSAPI_KEY、AMAP_SECURITY_CODE、FLYAI_API_KEY 和 VARIFLIGHT_API_KEY；不要让我把 Key 粘贴到对话，不输出真实 Key，也不要把 Key 放进命令行、MCP URL、日志或文件提交。
+4. 按需运行 ./scripts/install-optional.sh 和 ./scripts/setup-credentials.sh amap|flyai|variflight；只在本机配置页填写已轮换的 Key，桌面端写入 macOS Keychain，不创建明文 credentials.env。
+5. 不要让我把 Key 粘贴到对话，不输出真实 Key，也不要把 Key 放进命令行、MCP URL、日志或文件提交；旧 credentials.env 不自动迁移，我会自行清理旧文件。
 6. 如需户外风险，请引导我在本地创建 QWeather Ed25519 JWT 配置：QWEATHER_API_HOST、QWEATHER_KEY_ID、QWEATHER_DEVELOPER_ID、QWEATHER_PROJECT_ID 与仓库外、权限 0600 的 QWEATHER_PRIVATE_KEY_PATH；不要让私钥内容进入对话或仓库。
 7. 运行 travel-assistant doctor；默认不要运行 doctor --live，除非我明确同意在线探测。
 8. 检查八个 Agent Skills、china-12306 MCP、可选 variflight MCP、QWeather、Ego Browser Skill 和 Visualize 能力状态，并报告 ready、missing、expired、forbidden、rate_limited、degraded、unknown 或 not_required 类别。
@@ -231,7 +234,7 @@ https://github.com/19Chris19/china-travel-assistant
 
 - 只查询、比较、准备表单和生成真实平台链接；实名、下单、支付、退改必须经过单独明确确认。
 - 本项目不代替承运方、铁路、酒店或地图服务的最终库存、价格、条款和安全判断。
-- 所有曾在聊天、代码或历史配置中暴露的 Key 都应先轮换，再写入本地 `0600` 凭据文件。
+- 所有曾在聊天、代码或历史配置中暴露的 Key 都应先轮换，再通过本机配置页写入系统凭据存储。
 - `rent-ops` 为 CC-BY-NC-4.0，仅作 v2 研究；它和任何其他非商业材料都不进入 MIT 核心。
 
 ## 开发与验证

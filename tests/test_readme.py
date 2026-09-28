@@ -82,9 +82,9 @@ class ReadmeTests(unittest.TestCase):
 
     def test_readme_explains_tiers_and_visualize_fallbacks(self):
         text = README.read_text(encoding="utf-8")
-        for tier in ("Standard", "Pro", "Pro Max"):
+        for tier in ("智能选择", "从容", "拓界", "远征"):
             self.assertIn(tier, text)
-        self.assertIn("普通请求的 Auto 默认", text)
+        self.assertIn("普通请求的智能选择默认", text)
         self.assertIn("只能由用户显式选择", text)
         self.assertIn("https://learn.chatgpt.com/docs/visualizations", text)
         self.assertIn("travel-assistant render-plan", text)
@@ -102,14 +102,13 @@ class ReadmeTests(unittest.TestCase):
         ):
             self.assertIn(url, text)
         self.assertNotIn("https://mcp.variflight.com/", text)
-        self.assertIn("~/.config/china-travel-assistant/credentials.env", text)
+        self.assertIn("Keychain", text)
+        self.assertIn("不读取旧 `credentials.env`", text)
         self.assertIn("0600", text)
         self.assertIn("VIGOLIVE_API_KEY", text)
         self.assertNotRegex(text, r"sk-[A-Za-z0-9_-]{20,}")
         self.assertIn("2026-09-28", text)
-        self.assertIn("150,000", text)
-        self.assertIn("5,000", text)
-        self.assertIn("¥50", text)
+        self.assertIn("以供应商控制台为准", text)
         self.assertIn("Ed25519", text)
 
     def test_readme_design_tool_is_credited_as_inspiration(self):

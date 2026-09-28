@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to TianShu TravelOS are documented here. The project follows semantic versioning.
+All notable changes to 远行计划局 are documented here. The project follows semantic versioning.
 
 ## [0.3.0] - 2026-09-28
 
@@ -10,16 +10,20 @@ All notable changes to TianShu TravelOS are documented here. The project follows
 - Place evidence, QWeather JWT configuration, and weather-aware outdoor or transfer risk facts.
 - Safe `unknown` and `not_required` provider-health states with timestamps and capability scopes.
 - A narrow data-health ribbon in exact HTML, SVG, and Markdown itinerary outputs.
+- Chinese tier aliases and display names: 智能选择、从容、拓界、远征; canonical API enum values are unchanged.
 
 ### Changed
 
 - All eight Agent Skills now guide automatic gateway scanning, place facts, optional outdoor risk, and evidence-safe degradation.
 - `travel-assistant doctor` reports QWeather and Visualize capability state without issuing paid requests by default.
+- Public brand migrated from 天枢 TravelOS to 远行计划局 · 中国出行 Agent Skill; historical v0.2.0 notes below retain the original name and terms.
+- Core installation no longer requires optional Node, `uvx`, FlyAI, Variflight, or Ego components.
 
 ### Security
 
 - QWeather private keys stay outside the repository and must have `0600` permissions.
 - Renderers ignore untrusted remediation text and never display raw credentials, private-key paths, or request URLs.
+- Desktop provider keys use isolated system credential profiles; the legacy plaintext `credentials.env` is no longer read.
 
 ## [0.2.0] - 2026-08-27
 

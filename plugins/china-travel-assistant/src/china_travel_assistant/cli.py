@@ -19,6 +19,8 @@ from .contracts import (
     ProviderHealthRecord,
     TravelOffer,
     TravelRequest,
+    TIER_ALIASES,
+    parse_tier,
 )
 from .doctor import Doctor, ProviderProbeError, probe_amap, probe_variflight
 from .offers import deduplicate_offers, rank_offers
@@ -79,7 +81,7 @@ def _parser() -> argparse.ArgumentParser:
 
     plan = subparsers.add_parser("plan", help="build a route exploration plan and compose supplied itinerary legs")
     plan.add_argument("json", nargs="?")
-    plan.add_argument("--tier", choices=tuple(item.value for item in ExplorationTier))
+    plan.add_argument("--tier", choices=(*tuple(item.value for item in ExplorationTier), *TIER_ALIASES))
     plan.add_argument("--presentation", choices=tuple(item.value for item in PresentationMode), default="auto")
 
     render = subparsers.add_parser("render-plan", help="render itinerary JSON as exact local HTML, SVG, or Markdown")
@@ -190,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("plan request must be a JSON object")
             request = TravelRequest.from_mapping(request_payload)
             if args.tier:
-                request = replace(request, exploration_tier=ExplorationTier(args.tier))
+                request = replace(request, exploration_tier=parse_tier(args.tier))
             raw_legs = payload.get("legs", [])
             if not isinstance(raw_legs, list):
                 raise ValueError("plan legs must be a JSON array")

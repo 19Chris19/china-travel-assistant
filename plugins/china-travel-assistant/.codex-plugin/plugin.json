@@ -9,11 +9,11 @@
   "homepage": "https://github.com/19Chris19/china-travel-assistant",
   "repository": "https://github.com/19Chris19/china-travel-assistant",
   "license": "MIT",
-  "keywords": ["agent-skill", "china-travel", "omniroute", "flights", "12306", "hotels", "amap", "ego-browser"],
+  "keywords": ["agent-skill", "china-travel", "route-exploration", "flights", "12306", "hotels", "amap", "ego-browser"],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "TianShu TravelOS Agent Skill",
+    "displayName": "远行计划局 · 中国出行 Agent Skill",
     "shortDescription": "Eight Agent Skills for exact and imaginative China travel planning.",
     "longDescription": "Use eight Agent Skills to compare domestic flights, China Railway services, hotels and transfers, rank generic reachable gateways from explicit door-to-door facts, assess optional outdoor risk, verify pages through Ego Browser, and present exact facts through Visualize or local artifacts.",
     "developerName": "19Chris19",
@@ -21,7 +21,7 @@
     "capabilities": ["Search", "Interactive"],
     "defaultPrompt": [
       "Use the China travel Agent Skills to compare total cost, time, fatigue, risk, and evidence.",
-      "Explore a Pro route while comparing generic reachable gateways and keeping a stable baseline.",
+      "Explore a 拓界 route while comparing generic reachable gateways and keeping a stable baseline.",
       "Present the validated itinerary with Visualize or an exact local HTML fallback."
     ]
   }

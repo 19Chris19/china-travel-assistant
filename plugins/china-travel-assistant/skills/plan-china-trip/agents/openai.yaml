@@ -1,4 +1,4 @@
 interface:
-  display_name: "天枢 TravelOS 总规划 Skill"
+  display_name: "远行计划局 · 总规划 Skill"
   short_description: "由 Agent 编排八个 Skills，比较通用门户、路线事实与创新组合"
   default_prompt: "Use $plan-china-trip to orchestrate the China Travel Assistant Agent Skills, default to Auto/Pro exploration, compare generic reachable gateways with explicit door-to-door facts, keep a stable baseline, and present exact evidence-backed results."
