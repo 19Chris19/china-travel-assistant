@@ -9,7 +9,16 @@ import sys
 from dataclasses import replace
 
 from .amap import AmapClient
-from .contracts import ExplorationTier, ItineraryLeg, PresentationMode, TravelOffer, TravelRequest
+from .contracts import (
+    ExplorationTier,
+    GatewayCandidate,
+    ItineraryLeg,
+    PlaceEvidence,
+    PresentationMode,
+    ProviderHealthRecord,
+    TravelOffer,
+    TravelRequest,
+)
 from .doctor import Doctor, load_credentials
 from .offers import deduplicate_offers, rank_offers
 from .omniroute import plan_trip
@@ -48,7 +57,7 @@ def _parser() -> argparse.ArgumentParser:
     offers.add_argument("--by", choices=("price", "duration", "balanced"), default="balanced")
 
     route = subparsers.add_parser("provider-plan", help="show the deterministic provider route")
-    route.add_argument("capability", choices=("flight", "train", "hotel", "transfer", "poi", "map"))
+    route.add_argument("capability", choices=("flight", "train", "hotel", "transfer", "poi", "map", "weather"))
     route.add_argument("--verify-status", action="store_true")
     route.add_argument("--verify-web", action="store_true")
     route.add_argument("--include-booking-link", action="store_true")
@@ -164,7 +173,24 @@ def main(argv: list[str] | None = None) -> int:
                 if not isinstance(item, dict):
                     raise ValueError(f"plan leg {index} must be a JSON object")
                 legs.append(ItineraryLeg.from_mapping(item))
-            result = plan_trip(request, legs)
+            def contract_list(key, factory):
+                values = payload.get(key, [])
+                if not isinstance(values, list):
+                    raise ValueError(f"plan {key} must be a JSON array")
+                result = []
+                for index, item in enumerate(values):
+                    if not isinstance(item, dict):
+                        raise ValueError(f"plan {key} {index} must be a JSON object")
+                    result.append(factory.from_mapping(item))
+                return result
+
+            result = plan_trip(
+                request,
+                legs,
+                gateway_candidates=contract_list("gateway_candidates", GatewayCandidate),
+                place_evidence=contract_list("place_evidence", PlaceEvidence),
+                provider_health=contract_list("provider_health", ProviderHealthRecord),
+            )
             result["presentation_requested"] = args.presentation
             print(json.dumps(result, ensure_ascii=False))
         elif args.command == "render-plan":

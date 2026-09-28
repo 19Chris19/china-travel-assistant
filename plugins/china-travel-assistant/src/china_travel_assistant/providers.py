@@ -40,6 +40,8 @@ def build_provider_plan(
         plan = [ProviderStep("flyai", ProviderAction.SEARCH, True, "primary hotel search")]
     elif capability in {"transfer", "poi", "map"}:
         plan = [ProviderStep("amap", ProviderAction.SEARCH, True, "official map and routing data")]
+    elif capability == "weather":
+        plan = [ProviderStep("qweather", ProviderAction.SEARCH, False, "weather and outdoor risk enrichment")]
     else:
         raise ValueError(f"unsupported capability: {capability}")
     if verify_web:

@@ -738,6 +738,8 @@ class PlaceEvidence:
     source: str | None = None
     queried_at: datetime | None = None
     evidence_status: EvidenceStatus = EvidenceStatus.PARTIAL
+    rank: int | None = None
+    ranking_reason: str | None = None
 
     @classmethod
     def from_mapping(cls, value: Mapping[str, Any]) -> "PlaceEvidence":
@@ -763,6 +765,8 @@ class PlaceEvidence:
                 field_name="evidence_status",
                 default=EvidenceStatus.PARTIAL,
             ),
+            rank=_optional_integer(value.get("rank"), field_name="rank", minimum=1),
+            ranking_reason=_optional_text(value.get("ranking_reason")),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -777,6 +781,8 @@ class PlaceEvidence:
             "source": self.source,
             "queried_at": self.queried_at.isoformat() if self.queried_at else None,
             "evidence_status": self.evidence_status.value,
+            "rank": self.rank,
+            "ranking_reason": self.ranking_reason,
         }
 
 

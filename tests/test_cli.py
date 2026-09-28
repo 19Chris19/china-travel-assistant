@@ -59,6 +59,41 @@ class CliTests(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "")
         self.assertIn("JSON object", stderr.getvalue())
 
+    def test_plan_normalizes_multisource_facts_and_rejects_invalid_fact_arrays(self):
+        stdout = io.StringIO()
+        with redirect_stdout(stdout):
+            result = main(
+                [
+                    "plan",
+                    json.dumps(
+                        {
+                            "origin": "无机场城市",
+                            "destination": "目的地",
+                            "date_start": "2026-09-28",
+                            "gateway_candidates": [
+                                {
+                                    "gateway_id": "a",
+                                    "name": "门户 A",
+                                    "gateway_type": "airport",
+                                    "origin": "无机场城市",
+                                    "destination": "目的地",
+                                    "flight_total_cny": 500,
+                                    "ground_access": [{"endpoint": "门户 A", "mode": "rail", "cost_cny": 20}],
+                                }
+                            ],
+                            "provider_health": [
+                                {"provider": "amap", "status": "ready", "capabilities": ["transfer"]}
+                            ],
+                        }
+                    ),
+                ]
+            )
+
+        self.assertEqual(result, 0)
+        payload = json.loads(stdout.getvalue())
+        self.assertEqual(payload["gateway_candidates"][0]["total_known_cost_cny"], 520)
+        self.assertEqual(payload["provider_health"][0]["provider"], "amap")
+
     def test_rank_offers_rejects_non_array_json(self):
         stdout = io.StringIO()
         stderr = io.StringIO()

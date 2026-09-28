@@ -8,8 +8,11 @@ from .contracts import (
     EvidenceStatus,
     ExplorationPolicy,
     ExplorationTier,
+    GatewayCandidate,
     ItineraryCandidate,
     ItineraryLeg,
+    PlaceEvidence,
+    ProviderHealthRecord,
     RiskLevel,
     TravelRequest,
 )
@@ -98,10 +101,10 @@ def build_search_plan(request: TravelRequest, policy: ExplorationPolicy) -> tupl
             student_fare=request.student_fare,
         ),
         SearchInstruction(
-            instruction_id="baseline-nearby-gateways",
-            template="nearby_gateway",
+            instruction_id="baseline-gateway-scan",
+            template="gateway_scan",
             capabilities=("poi", "flight", "train", "transfer"),
-            purpose="Check nearby airports and stations without relaxing the user's hard constraints.",
+            purpose="Discover and compare reachable airports or rail gateways without hard-coding a city or relaxing constraints.",
             priority=1,
             student_fare=request.student_fare,
         ),
@@ -176,6 +179,94 @@ def build_search_plan(request: TravelRequest, policy: ExplorationPolicy) -> tupl
                     )
                 )
     return tuple(instructions)
+
+
+def _gateway_score(candidate: GatewayCandidate) -> tuple[object, ...]:
+    """Prefer complete facts; no missing value is converted into a guessed score."""
+
+    total_cost = candidate.total_known_cost_cny
+    total_duration = candidate.total_duration_minutes
+    transfers = candidate.transfer_count
+    return (
+        total_cost is None,
+        total_cost if total_cost is not None else inf,
+        total_duration is None,
+        total_duration if total_duration is not None else inf,
+        transfers is None,
+        transfers if transfers is not None else inf,
+        _EVIDENCE_ORDER[candidate.evidence_status],
+        candidate.name,
+    )
+
+
+def _gateway_reason(candidate: GatewayCandidate) -> str:
+    total_cost = candidate.total_known_cost_cny
+    duration = candidate.total_duration_minutes
+    transfers = candidate.transfer_count
+    facts = []
+    if total_cost is None:
+        facts.append("门到门总成本未返回，排在成本完整候选之后")
+    else:
+        facts.append(f"已知门到门成本 CNY {total_cost:.2f}")
+    facts.append(f"总耗时 {duration} 分钟" if duration is not None else "总耗时未返回")
+    facts.append(f"换乘 {transfers} 次" if transfers is not None else "换乘次数未返回")
+    facts.append(f"证据 {candidate.evidence_status.value}")
+    return "；".join(facts)
+
+
+def rank_gateway_candidates(candidates: Iterable[GatewayCandidate]) -> tuple[GatewayCandidate, ...]:
+    """Rank arbitrary transport gateways using only explicitly known values."""
+
+    ordered = sorted(candidates, key=_gateway_score)
+    return tuple(
+        replace(candidate, rank=index, ranking_reason=_gateway_reason(candidate))
+        for index, candidate in enumerate(ordered, 1)
+    )
+
+
+def _place_is_closed(place: PlaceEvidence) -> bool:
+    status = (place.opening_status or "").casefold()
+    return any(token in status for token in ("closed", "close", "关闭", "闭园", "暂停"))
+
+
+def _place_score(place: PlaceEvidence) -> tuple[object, ...]:
+    weather = place.weather_risk
+    weather_risk = _RISK_ORDER[weather.risk_level] if weather else _RISK_ORDER[RiskLevel.MANAGED]
+    durations = [item.total_duration_minutes for item in place.access_options]
+    best_duration = min((item for item in durations if item is not None), default=inf)
+    return (
+        _place_is_closed(place),
+        weather is None,
+        weather_risk,
+        best_duration == inf,
+        best_duration,
+        _EVIDENCE_ORDER[place.evidence_status],
+        place.name,
+    )
+
+
+def _place_reason(place: PlaceEvidence) -> str:
+    weather = place.weather_risk
+    if _place_is_closed(place):
+        return "官方开放状态显示不可用，保留为事实记录但不作为推荐。"
+    if weather is None:
+        weather_summary = "天气未返回"
+    else:
+        weather_summary = f"户外风险 {weather.risk_level.value}"
+    duration = min(
+        (item.total_duration_minutes for item in place.access_options if item.total_duration_minutes is not None),
+        default=None,
+    )
+    access_summary = f"最快已知接驳 {duration} 分钟" if duration is not None else "接驳时长未返回"
+    return f"{weather_summary}；{access_summary}；证据 {place.evidence_status.value}"
+
+
+def rank_place_evidence(places: Iterable[PlaceEvidence]) -> tuple[PlaceEvidence, ...]:
+    ordered = sorted(places, key=_place_score)
+    return tuple(
+        replace(place, rank=index, ranking_reason=_place_reason(place))
+        for index, place in enumerate(ordered, 1)
+    )
 
 
 def _endpoint(value: str) -> str:
@@ -381,14 +472,26 @@ def compose_itineraries(
     )
 
 
-def plan_trip(request: TravelRequest, legs: Iterable[ItineraryLeg] = ()) -> dict[str, object]:
+def plan_trip(
+    request: TravelRequest,
+    legs: Iterable[ItineraryLeg] = (),
+    *,
+    gateway_candidates: Iterable[GatewayCandidate] = (),
+    place_evidence: Iterable[PlaceEvidence] = (),
+    provider_health: Iterable[ProviderHealthRecord] = (),
+) -> dict[str, object]:
     policy = policy_for(request)
     search_plan = build_search_plan(request, policy)
     itineraries = compose_itineraries(request, legs, policy)
+    gateways = rank_gateway_candidates(gateway_candidates)
+    places = rank_place_evidence(place_evidence)
     return {
         "request": request.to_dict(),
         "resolved_tier": policy.tier.value,
         "policy": policy.to_dict(),
         "search_plan": [instruction.to_dict() for instruction in search_plan],
         "itineraries": [candidate.to_dict() for candidate in itineraries],
+        "gateway_candidates": [candidate.to_dict() for candidate in gateways],
+        "place_evidence": [place.to_dict() for place in places],
+        "provider_health": [record.to_dict() for record in provider_health],
     }
