@@ -56,7 +56,7 @@ jobs:
       - name: Build release assets
         run: |
           python scripts/build-release.py --version "${GITHUB_REF_NAME#v}" --output dist
-          sha256sum -c dist/SHA256SUMS
+          (cd dist && sha256sum -c SHA256SUMS)
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
