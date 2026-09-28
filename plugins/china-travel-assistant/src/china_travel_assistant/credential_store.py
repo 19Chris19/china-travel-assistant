@@ -64,7 +64,11 @@ def run_with_profile(provider: str, command: list[str]) -> int:
     for name in PROVIDER_VARIABLES.values():
         if name != PROVIDER_VARIABLES[provider]:
             environment.pop(name, None)
-    for name in ("AMAP_JSAPI_KEY", "AMAP_SECURITY_CODE", "VIGOLIVE_API_KEY"):
+    for name in (
+        "AMAP_JSAPI_KEY", "AMAP_SECURITY_CODE", "VIGOLIVE_API_KEY",
+        "QWEATHER_API_HOST", "QWEATHER_KEY_ID", "QWEATHER_DEVELOPER_ID",
+        "QWEATHER_PROJECT_ID", "QWEATHER_PRIVATE_KEY_PATH",
+    ):
         environment.pop(name, None)
     return subprocess.run(
         [node, str(script), "run", provider, "--", *command], env=environment, check=False,

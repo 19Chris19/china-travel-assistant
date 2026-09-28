@@ -40,7 +40,7 @@ test('真实分发配置：正式页面保存后可被对应业务环境读取�
 });
 
 test('已有环境凭据无需读取系统库；缺失或后端失败时不启动业务', async () => {
-  const bindings = await loadProfile('default');
+  const bindings = await loadProfile('amap');
   const env = Object.fromEntries(bindings.map(b => [b.env, 'TEST_ONLY_ENV']));
   const noRead = async () => { throw Error('TEST_ONLY_FAILURE'); };
   assert.equal((await profileStatus(bindings, env, noRead)).configured, true);

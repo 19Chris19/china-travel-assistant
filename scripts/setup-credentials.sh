@@ -13,11 +13,11 @@ node -e 'const [a,b]=process.versions.node.split(".").map(Number);process.exit(a
   exit 2
 }
 command -v npm >/dev/null 2>&1 || { echo "npm is required for the optional credential page" >&2; exit 2; }
-if [ ! -f "$ui_root/src/profile.ts" ]; then
-  mkdir -p "$(dirname "$ui_root")"
-  cp -R "$root_dir/plugins/china-travel-assistant/credential-ui" "$ui_root"
-fi
-if [ ! -d "$ui_root/node_modules/@napi-rs/keyring" ]; then
-  (cd "$ui_root" && npm ci --ignore-scripts --no-audit --no-fund)
-fi
+source_ui="$root_dir/plugins/china-travel-assistant/credential-ui"
+mkdir -p "$ui_root/manifests" "$ui_root/src" "$ui_root/public"
+cp "$source_ui/package.json" "$source_ui/package-lock.json" "$ui_root/"
+cp "$source_ui/manifests/"*.json "$ui_root/manifests/"
+cp "$source_ui/src/"*.ts "$ui_root/src/"
+cp "$source_ui/public/"* "$ui_root/public/"
+(cd "$ui_root" && npm ci --ignore-scripts --no-audit --no-fund)
 exec node "$ui_root/src/profile.ts" setup "$provider"
