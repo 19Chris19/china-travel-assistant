@@ -111,14 +111,16 @@ class PackagingTests(unittest.TestCase):
         self.assertIn("${{ secrets.GITHUB_TOKEN }}", workflow)
         self.assertIn("ruff check", workflow)
         self.assertIn("pip wheel", workflow)
+        self.assertIn("python scripts/validate-plugin.py", workflow)
+        self.assertIn("python scripts/build-release.py", workflow)
+        self.assertIn('node-version: "22"', workflow)
 
     def test_release_workflow_builds_checksumed_plugin_and_wheel(self):
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
 
         self.assertIn('tags:\n      - "v*"', workflow)
-        self.assertIn("python -m build --wheel", workflow)
-        self.assertIn("china-travel-assistant-plugin-${GITHUB_REF_NAME}.zip", workflow)
-        self.assertIn('"*/build/*"', workflow)
+        self.assertIn('python scripts/build-release.py --version "${GITHUB_REF_NAME#v}"', workflow)
+        self.assertNotIn("zip -r", workflow)
         self.assertIn("SHA256SUMS", workflow)
         self.assertIn("gh release create", workflow)
         self.assertIn("--verify-tag", workflow)
@@ -131,7 +133,7 @@ class PackagingTests(unittest.TestCase):
 
         self.assertIn("## [0.3.0] - 2026-09-28", changelog)
         self.assertIn("eight-Skill Agent Plugin", notes)
-        self.assertIn("天枢 TravelOS", notes)
+        self.assertIn("远行计划局", notes)
 
     def test_python_distribution_includes_publication_notices(self):
         pyproject = (PLUGIN / "pyproject.toml").read_text(encoding="utf-8")

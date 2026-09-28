@@ -223,6 +223,7 @@ https://github.com/19Chris19/china-travel-assistant
 
 - [@fly-ai/flyai-cli](https://www.npmjs.com/package/@fly-ai/flyai-cli) `1.0.16`：主查航班和酒店的 CLI。
 - [@variflight-ai/variflight-mcp](https://www.npmjs.com/package/@variflight-ai/variflight-mcp) `1.0.3`：可选飞常准 MCP；仓库许可证文件缺失时不复制其源码。
+- 本机凭据配置页改编自本地安装的 MIT `oil-skill-creator/assets/credential-ui` 组件；公开上游地址尚未核实，来源关系以 [`provenance.yml`](provenance.yml) 的 `adapted_from` 记录为准，不冒称 Fork。
 - [Yyh3/china-travel-planner-skills](https://github.com/Yyh3/china-travel-planner-skills)：最接近的中国出行多 Skill 架构参考。
 - [MikkoParkkola/trvl](https://github.com/MikkoParkkola/trvl)：供应商健康状态和部分结果参考；PolyForm Noncommercial，不进入 MIT 核心。
 - [618034128/Travel-Planning-Skill](https://github.com/618034128/Travel-Planning-Skill)：确认门、12306 和地图路由参考。
